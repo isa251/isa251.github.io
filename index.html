@@ -6,41 +6,6 @@
   <title>Flip Book</title>
 
   <style>
-
-    a.inlineLink{
-  color: rgba(16,24,39,.86);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-a.inlineLink:hover{ opacity:.85; }
-
-    .workShot{
-  margin-top: 12px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-
-.workShot img{
-  width: 100%;
-  height: auto;
-  display:block;
-  border-radius: 14px;
-  box-shadow: 0 14px 30px rgba(0,0,0,.12);
-}
-
-.workCaption{
-  font-size: 12px;
-  color: rgba(16,24,39,.60);
-}
-
-.workLink{
-  display:inline-block;
-  margin-top: 10px;
-  color: rgba(16,24,39,.78);
-  text-decoration: underline;
-}
-
     :root{
       --bg:#cfdde8;
 
@@ -68,9 +33,9 @@ a.inlineLink:hover{ opacity:.85; }
       /* cover shift (only during opening) */
       --coverShift: -120px;
 
-      /* durations (faster & smoother) */
-      --flipDur: 600ms;     /* was 850ms */
-      --coverDur: 480ms;    /* cover open faster */
+      /* durations */
+      --flipDur: 600ms;
+      --coverDur: 480ms;
     }
 
     *{ box-sizing:border-box; }
@@ -91,8 +56,6 @@ a.inlineLink:hover{ opacity:.85; }
       display:grid;
       place-items:center;
       perspective: 2200px;
-
-      /* safe padding for cover on phones */
       padding:
         max(16px, env(safe-area-inset-top))
         max(16px, env(safe-area-inset-right))
@@ -135,7 +98,7 @@ a.inlineLink:hover{ opacity:.85; }
       opacity:1;
       visibility:visible;
       transition: opacity .12s ease, visibility 0s linear;
-      padding: clamp(14px, 4vw, 28px); /* prevent cut */
+      padding: clamp(14px, 4vw, 28px);
     }
     .bookRig.opened .coverStage{
       opacity:0;
@@ -155,7 +118,6 @@ a.inlineLink:hover{ opacity:.85; }
       transition: transform .35s cubic-bezier(.2,.8,.2,1);
       margin: 0 auto;
     }
-
     .bookRig.opening .a4Wrap{
       transform: translateX(var(--coverShift));
     }
@@ -327,7 +289,34 @@ a.inlineLink:hover{ opacity:.85; }
       color: rgba(17,24,39,.80);
     }
 
-    /* Right-bottom cue (next) */
+    /* inline link */
+    a.inlineLink{
+      color: rgba(16,24,39,.86);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    a.inlineLink:hover{ opacity:.85; }
+
+    /* work block */
+    .workShot{
+      margin-top: 12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .workShot img{
+      width: 100%;
+      height: auto;
+      display:block;
+      border-radius: 14px;
+      box-shadow: 0 14px 30px rgba(0,0,0,.12);
+    }
+    .workCaption{
+      font-size: 12px;
+      color: rgba(16,24,39,.60);
+    }
+
+    /* click cues */
     .page.right::after{
       content:"";
       position:absolute;
@@ -351,7 +340,6 @@ a.inlineLink:hover{ opacity:.85; }
       pointer-events:none;
     }
 
-    /* Left-bottom cue (prev) on LEFT page (desktop) */
     .page.left::before{
       content:"";
       position:absolute;
@@ -459,8 +447,8 @@ a.inlineLink:hover{ opacity:.85; }
        Mobile
        ====================== */
     @media (max-width: 760px){
-      body{ overflow:auto; }        /* ★coverが隠れるのを防ぐ */
-      .desk{ overflow: visible; }   /* ★切れ防止 */
+      body{ overflow:auto; }
+      .desk{ overflow: visible; }
 
       :root{
         --bookW: 94vw;
@@ -483,7 +471,7 @@ a.inlineLink:hover{ opacity:.85; }
 
       .hotRight,.hotLeft{ width: 40%; height: 30%; }
 
-      /* ★PHONE ONLY: show left-bottom shadow cue on the single page IF can prev */
+      /* phone only prev cue on single page */
       .spreadWrap[data-can-prev="true"] .page.right::before{
         content:"";
         position:absolute;
@@ -557,40 +545,38 @@ a.inlineLink:hover{ opacity:.85; }
   <script>
     const PAGES = {
       1: { title:"Chapter 1", subtitle:"自己紹介", body:[
-        "マカオ出身<br>映像制作を学びたくて、日本に留学しました。",
+        "マカオ出身\n映像制作を学びたくて、日本に留学しました。",
         "最近は生成AIの動画に興味があります"
       ]},
       2: { title:"Chapter 2", subtitle:"好きなもの", body:[
         "好きなアニメは「ジョジョの奇妙な冒険」です。理由は、ストーリーが何度見ても飽きないほど魅力的だからです。独特な画風と世界観も好きです。尊敬する人はその作者、荒木飛呂彦さん。理由は漫画家なのに、生活リズムが驚くほど整っています。朝5時起床・夜9時就寝という徹底していて、原稿の締め切りも遅れたことがないだそうです。あとはもちろん、発想力と世界観が羨ましいです。",
         " "
       ]},
-  3: {
-  title:"Chapter 3",
-  subtitle:"これまでの作品",
-  body:[
-    "ここに作品説明（短め）を入れて、下に画像を置くのがおすすめです。"
-  ],
-  extraHTML: `
-    <div class="workShot">
-      <img src="assets/img/birdweek_copy.jpg" alt="作品サンプル" loading="lazy">
-      <div class="workCaption">作品サンプル</div>
-    </div>
-  `
-},
-
-     4: {
-  title:"Chapter 4",
-  subtitle:"最近",
-  body:[
-    `動画生成や画像生成にハマっています（
-      <a class="inlineLink" href="https://www.youtube.com/watch?v=kbTz0UgWW4M" target="_blank" rel="noopener noreferrer">
-        作品リンク
-      </a>
-    ）`,
-    "Thanks for reading!"
-  ]
-},
-
+      3: {
+        title:"Chapter 3",
+        subtitle:"これまでの作品",
+        body:[
+          "ここに作品説明（短め）を入れて、下に画像を置くのがおすすめです。"
+        ],
+        extraHTML: `
+          <div class="workShot">
+            <img src="./assets/img/birdweek_copy.jpg" alt="作品サンプル" loading="lazy">
+            <div class="workCaption">作品サンプル</div>
+          </div>
+        `
+      },
+      4: {
+        title:"Chapter 4",
+        subtitle:"最近",
+        body:[
+          { html: `動画生成や画像生成にハマっています（
+            <a class="inlineLink" href="https://www.youtube.com/watch?v=kbTz0UgWW4M" target="_blank" rel="noopener noreferrer">
+              作品リンク
+            </a>
+          ）`},
+          "Thanks for reading!"
+        ]
+      },
     };
 
     const ORDER = Object.keys(PAGES).map(Number).sort((a,b)=>a-b);
@@ -610,7 +596,6 @@ a.inlineLink:hover{ opacity:.85; }
 
     const bookRig = document.getElementById("bookRig");
     const openCorner = document.getElementById("openCorner");
-
     const spreadWrap = document.getElementById("spreadWrap");
 
     const cLeft = document.getElementById("cLeft");
@@ -631,7 +616,6 @@ a.inlineLink:hover{ opacity:.85; }
     const prevBack = document.getElementById("prevBack");
     const shadowPrev = document.getElementById("shadowPrev");
 
-    // keep JS duration in sync with CSS var (read once)
     const getMsVar = (name, fallback) => {
       const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
       if(!v) return fallback;
@@ -641,7 +625,7 @@ a.inlineLink:hover{ opacity:.85; }
     };
 
     let FLIP_DUR = getMsVar("--flipDur", 600);
-    let MID_SWAP = Math.floor(FLIP_DUR * 0.35); // earlier swap = feels snappier
+    let MID_SWAP = Math.floor(FLIP_DUR * 0.35);
 
     const esc = (s)=> String(s)
       .replaceAll("&","&amp;")
@@ -650,9 +634,14 @@ a.inlineLink:hover{ opacity:.85; }
       .replaceAll('"',"&quot;")
       .replaceAll("'","&#39;");
 
+    function bodyItemHTML(item){
+      if (item && typeof item === "object" && "html" in item) return item.html;
+      return esc(String(item)).replaceAll("\n","<br>");
+    }
+
     function pageHTML(idx, {showBackMark=false, showNextMark=false} = {}){
       const p = PAGES[idx];
-      const body = (p.body ?? []).map(t=>`<p>${esc(t)}</p>`).join("");
+      const body = (p.body ?? []).map(item => `<p>${bodyItemHTML(item)}</p>`).join("");
       const markRight = showNextMark ? `<div class="flipMark">↘</div>` : "";
       const markLeft  = showBackMark ? `<div class="backMark">↙</div>` : "";
       const extra = p.extraHTML ? `<div style="margin-top:12px;">${p.extraHTML}</div>` : "";
@@ -674,7 +663,6 @@ a.inlineLink:hover{ opacity:.85; }
     }
 
     function updateMobileCues(){
-      // Phone only: show left-bottom cue if can go back
       if(isMobile()){
         spreadWrap.dataset.canPrev = String(cursor > 0);
       }else{
@@ -722,13 +710,11 @@ a.inlineLink:hover{ opacity:.85; }
       flipping = true;
       cursor = 0;
 
-      // Always render 1/2 BEFORE showing the spread (prevents wrong flash)
       renderCurrent();
 
       bookRig.classList.add("opening");
       bookRig.classList.add("opened");
 
-      // shorter than before; feels instant
       setTimeout(() => {
         mode = "open";
         bookRig.classList.remove("opening");
@@ -755,7 +741,6 @@ a.inlineLink:hover{ opacity:.85; }
       flipNext.classList.add("active");
       flipNext.style.transform = "rotateY(0deg)";
 
-      // force reflow then animate immediately (no RAF delay)
       flipNext.offsetHeight;
       flipNext.style.transform = "rotateY(-180deg)";
 
@@ -787,7 +772,7 @@ a.inlineLink:hover{ opacity:.85; }
       flipPrev.classList.add("active");
       flipPrev.style.transform = "rotateY(0deg)";
 
-      flipPrev.offsetHeight; // force reflow
+      flipPrev.offsetHeight;
       flipPrev.style.transform = "rotateY(180deg)";
 
       const mid = setTimeout(onMidSwap, MID_SWAP);
@@ -885,7 +870,6 @@ a.inlineLink:hover{ opacity:.85; }
     }
 
     function syncCursorOnResize(){
-      // refresh durations (CSS vars may change with media query)
       FLIP_DUR = getMsVar("--flipDur", 600);
       MID_SWAP = Math.floor(FLIP_DUR * 0.35);
 

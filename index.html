@@ -6,6 +6,14 @@
   <title>Flip Book</title>
 
   <style>
+
+    a.inlineLink{
+  color: rgba(16,24,39,.86);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+a.inlineLink:hover{ opacity:.85; }
+
     .workShot{
   margin-top: 12px;
   display:flex;
@@ -556,28 +564,33 @@
         "好きなアニメは「ジョジョの奇妙な冒険」です。理由は、ストーリーが何度見ても飽きないほど魅力的だからです。独特な画風と世界観も好きです。尊敬する人はその作者、荒木飛呂彦さん。理由は漫画家なのに、生活リズムが驚くほど整っています。朝5時起床・夜9時就寝という徹底していて、原稿の締め切りも遅れたことがないだそうです。あとはもちろん、発想力と世界観が羨ましいです。",
         "ここに説明やストーリーを入れられます。"
       ]},
-      3: {
-        title:"Chapter 3",
-        subtitle:"これまでの作品",
-        body:[
-          "ここに作品説明（短め）を入れて、下に画像＋リンクを置くのがおすすめです。"
-        ],
-        extraHTML: `
-          <div class="workShot">
-          <img src="assets/img/birdweek_copy.jpg" alt="作品サンプル" loading="lazy">
+  3: {
+  title:"Chapter 3",
+  subtitle:"これまでの作品",
+  body:[
+    "ここに作品説明（短め）を入れて、下に画像を置くのがおすすめです。"
+  ],
+  extraHTML: `
+    <div class="workShot">
+      <img src="assets/img/birdweek_copy.jpg" alt="作品サンプル" loading="lazy">
+      <div class="workCaption">作品サンプル</div>
+    </div>
+  `
+},
 
+     4: {
+  title:"Chapter 4",
+  subtitle:"最近",
+  body:[
+    `動画生成や画像生成にハマっています（
+      <a class="inlineLink" href="https://www.youtube.com/watch?v=kbTz0UgWW4M" target="_blank" rel="noopener noreferrer">
+        作品リンク
+      </a>
+    ）`,
+    "Thanks for reading!"
+  ]
+},
 
-            <div class="workCaption">作品サンプル（画像URLは好きなものに差し替えてOK）</div>
-          </div>
-          <a class="workLink" href="https://example.com" target="_blank" rel="noopener noreferrer">
-            作品リンクを見る →
-          </a>
-        `
-      },
-      4: { title:"Chapter 4", subtitle:"最近", body:[
-        "動画生成や画像生成にハマっています",
-        "Thanks for reading!"
-      ]},
     };
 
     const ORDER = Object.keys(PAGES).map(Number).sort((a,b)=>a-b);

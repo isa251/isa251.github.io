@@ -6,6 +6,20 @@
   <title>Flip Book</title>
 
   <style>
+    .ytWrap{
+  margin-top: 12px;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 14px 30px rgba(0,0,0,.12);
+  background: rgba(0,0,0,.06);
+}
+.ytWrap iframe{
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  display:block;
+}
+
     :root{
       --bg:#cfdde8;
 
@@ -565,18 +579,29 @@
           </div>
         `
       },
-      4: {
-        title:"Chapter 4",
-        subtitle:"最近",
-        body:[
-          { html: `動画生成や画像生成にハマっています（
-            <a class="inlineLink" href="https://www.youtube.com/watch?v=kbTz0UgWW4M" target="_blank" rel="noopener noreferrer">
-              作品リンク
-            </a>
-          ）`},
-          "Thanks for reading!"
-        ]
-      },
+     4: {
+  title:"Chapter 4",
+  subtitle:"最近",
+  body:[
+    { html: `動画生成や画像生成にハマっています` },
+
+    { html: `
+      <div class="ytWrap">
+        <iframe
+          src="https://www.youtube.com/embed/kbTz0UgWW4M"
+          title="YouTube video player"
+          loading="lazy"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen>
+        </iframe>
+      </div>
+    `},
+
+    "Thanks for reading!"
+  ]
+},
+
     };
 
     const ORDER = Object.keys(PAGES).map(Number).sort((a,b)=>a-b);

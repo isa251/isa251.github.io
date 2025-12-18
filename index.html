@@ -1,10 +1,717 @@
-<html>
-    <head>
-        <title>いざべらのポートフォリオ</title>
-    </head>
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Flip Book</title>
+  <style>
+    :root{
+      --bg1:#eff8ff;
+      --bg2:#3f77a2;
+
+      --paper:#fbf7ef;
+      --paper2:#f3eddc;
+      --ink:#101827;
+      --rule: rgba(16,24,39,.12);
+
+      --coverA:#fbf7ef;
+      --coverB:#fbf7ef;
+      --white: rgba(255,255,255,.92);
+
+      --r: 18px;
+      --serif: ui-serif, "Times New Roman", "Noto Serif JP", serif;
+      --sans: ui-sans-serif, system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif;
+
+      --a4W: min(420px, 52vw);
+      --a4H: calc(var(--a4W) * 1.414);
+
+      /* 表紙だけ左に寄せる量（本全体は動かさない） */
+      --coverShift: -120px;
+
+      /* フリップ時間 */
+      --flipDur: 850ms;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      min-height:100svh;
+      display:grid;
+      place-items:center;
+      font-family: var(--sans);
+      background:
+        radial-gradient(1200px 700px at 18% 12%, rgba(255,79,179,.14), transparent 55%),
+        radial-gradient(900px 600px at 78% 64%, rgba(99,102,241,.14), transparent 55%),
+        linear-gradient(160deg, var(--bg1), var(--bg2));
+      overflow:hidden;
+    }
+
+    .desk{
+      position:relative;
+      width: min(1100px, 92vw);
+      height: min(680px, 74vh);
+      display:grid;
+      place-items:center;
+      perspective: 2200px;
+    }
+
+    /* 本は常にセンター固定（ここ重要） */
+    .bookRig{
+      position:relative;
+      width: min(980px, 100%);
+      height: min(580px, 100%);
+      transform-style: preserve-3d;
+      transform: translateX(0);
+    }
+
+    /* 台座影（立体感） */
+    .bookRig::before{
+      content:"";
+      position:absolute;
+      left:50%;
+      bottom:-26px;
+      width: 88%;
+      height: 34px;
+      transform: translateX(-50%);
+      background: radial-gradient(closest-side, rgba(0,0,0,.55), transparent 70%);
+      filter: blur(6px);
+      opacity:.85;
+      pointer-events:none;
+      z-index:0;
+    }
+
+    /* ======================
+       表紙（中央A4）※動くのはここだけ
+       ====================== */
+    .coverStage{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      z-index: 10;
+      opacity:1;
+      visibility:visible;
+      transition: opacity .12s ease, visibility 0s linear;
+    }
+    .bookRig.opened .coverStage{
+      opacity:0;
+      visibility:hidden;
+      transition: opacity .12s ease, visibility 0s linear .12s;
+      pointer-events:none;
+    }
+
+    .a4Wrap{
+      width: var(--a4W);
+      height: var(--a4H);
+      position:relative;
+      transform-style: preserve-3d;
+      transform: translateX(0);
+      transition: transform .35s cubic-bezier(.2,.8,.2,1);
+    }
+
+    /* ★開く瞬間だけ表紙を左へ（spreadは動かない） */
+    .bookRig.opening .a4Wrap{
+      transform: translateX(var(--coverShift));
+    }
+
+    .coverCard{
+      position:absolute;
+      inset:0;
+      border-radius: var(--r);
+      transform-style: preserve-3d;
+      transform-origin: left center;
+      transition: transform .70s cubic-bezier(.2,.75,.2,1);
+      box-shadow:
+        0 26px 80px rgba(0,0,0,.55),
+        0 8px 18px rgba(0,0,0,.25);
+      border: 1px solid rgba(255,255,255,.12);
+      overflow:hidden;
+      background:
+        radial-gradient(900px 550px at 30% 18%, rgba(255,79,179,.18), transparent 55%),
+        radial-gradient(900px 700px at 78% 70%, rgba(99,102,241,.16), transparent 60%),
+        linear-gradient(135deg, var(--coverA), var(--coverB));
+    }
+
+    .bookRig.opening .coverCard{ transform: rotateY(-155deg); }
+
+    .magTitle{
+      position:absolute;
+      top: 18px;
+      left: 20px;
+      right: 20px;
+      font-family: var(--serif);
+      font-weight: 800;
+      font-size: 57px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--white);
+      line-height: 1;
+      text-shadow: 0 14px 40px rgba(0,0,0,.35);
+    }
+    .magRow{
+      position:absolute;
+      top: 110px;
+      left: 22px;
+      right: 22px;
+      display:flex;
+      justify-content:space-between;
+      font-family: var(--serif);
+      font-size: 50px;
+      letter-spacing:.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.86);
+      font-weight: 800;
+    }
+
+    /* 表紙：右下クリック領域（見える影付き） */
+    .openCorner{
+      position:absolute;
+      right:0; bottom:0;
+      width: 30%;
+      height: 34%;
+      cursor:pointer;
+      border-top-left-radius: 30px;
+      background: transparent;
+    }
+    .openCorner::after{
+      content:"";
+      position:absolute;
+      right: 0; bottom: 0;
+      width: 70px; height: 70px;
+      clip-path: polygon(100% 0, 0 100%, 100% 100%);
+      background: linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,0));
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,.35));
+      opacity:.9;
+      pointer-events:none;
+    }
+
+    /* ======================
+       見開き
+       ====================== */
+    .spreadStage{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      opacity:0;
+      visibility:hidden;
+      pointer-events:none;
+      transition: opacity .12s ease, visibility 0s linear .12s;
+      z-index: 2;
+    }
+    .bookRig.opened .spreadStage{
+      opacity:1;
+      visibility:visible;
+      pointer-events:auto;
+      transition: opacity .12s ease, visibility 0s linear;
+    }
+
+    .spreadWrap{
+      width: min(980px, 100%);
+      height: min(580px, 100%);
+      position:relative;
+      z-index:1;
+      filter: drop-shadow(0 18px 50px rgba(0,0,0,.45));
+    }
+
+    .spine{
+      position:absolute;
+      left:50%;
+      top:0;
+      width:10px;
+      height:100%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.22);
+      border-radius: 10px;
+      opacity:.92;
+      z-index: 6;
+      pointer-events:none;
+    }
+
+    .spread{
+      position:absolute;
+      inset:0;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      border-radius: var(--r);
+      overflow:hidden;
+      background: var(--paper);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.06) inset,
+        0 10px 28px rgba(0,0,0,.18);
+    }
+    .spread.under{ z-index: 2; }
+    .spread.current{ z-index: 4; }
+
+    .page{
+      position:relative;
+      padding: clamp(18px, 2.2vw, 34px);
+      color: var(--ink);
+      overflow:hidden;
+      background: var(--paper);
+    }
+    .page.left{
+      background: linear-gradient(90deg, var(--paper2), var(--paper));
+      box-shadow: inset -18px 0 30px rgba(0,0,0,.08);
+    }
+    .page.right{
+      box-shadow: inset 18px 0 30px rgba(0,0,0,.08);
+    }
+
+    .kicker{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      font-size:12px;
+      color: rgba(17,24,39,.56);
+      letter-spacing:.02em;
+    }
+    .rule{ height:1px; background: var(--rule); margin: 12px 0; }
+    .page h3{
+      margin:0;
+      font-family: var(--serif);
+      font-weight: 800;
+      font-size: clamp(18px, 2.2vw, 26px);
+      letter-spacing:.01em;
+      line-height:1.2;
+    }
+    .page p{
+      margin:0;
+      line-height:1.92;
+      font-size: 14px;
+      color: rgba(17,24,39,.80);
+    }
+
+    /* ========= 角の“影”でクリック誘導 ========= */
+
+    /* 右ページ：右下（次へ） */
+    .page.right::after{
+      content:"";
+      position:absolute;
+      right: 0;
+      bottom: 0;
+      width: 74px;
+      height: 74px;
+      clip-path: polygon(100% 0, 0 100%, 100% 100%);
+      background: linear-gradient(135deg, rgba(16,24,39,.18), rgba(16,24,39,0));
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,.22));
+      opacity:.9;
+      pointer-events:none;
+    }
+    .page.right .flipMark{
+      position:absolute;
+      right: 16px;
+      bottom: 12px;
+      font-size: 12px;
+      color: rgba(16,24,39,.60);
+      user-select:none;
+      pointer-events:none;
+    }
+
+    /* 左ページ：左下（戻る） */
+    .page.left::before{
+      content:"";
+      position:absolute;
+      left: 0;
+      bottom: 0;
+      width: 74px;
+      height: 74px;
+      clip-path: polygon(0 0, 0 100%, 100% 100%);
+      background: linear-gradient(225deg, rgba(16,24,39,.16), rgba(16,24,39,0));
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,.18));
+      opacity:.85;
+      pointer-events:none;
+    }
+    .page.left .backMark{
+      position:absolute;
+      left: 16px;
+      bottom: 12px;
+      font-size: 12px;
+      color: rgba(16,24,39,.58);
+      user-select:none;
+      pointer-events:none;
+    }
+
+    /* Next flip（右） */
+    .flipNext{
+      position:absolute;
+      top:0;
+      left:50%;
+      width:50%;
+      height:100%;
+      transform-style: preserve-3d;
+      transform-origin: left center;
+      pointer-events:none;
+      z-index: 9;
+      display:none;
+      transition: transform var(--flipDur) cubic-bezier(.2,.75,.2,1);
+      box-shadow: 0 18px 40px rgba(0,0,0,.25);
+    }
+    .flipNext.active{ display:block; }
+    .flipFace{
+      position:absolute;
+      inset:0;
+      backface-visibility:hidden;
+      overflow:hidden;
+      padding: clamp(18px, 2.2vw, 34px);
+      background: var(--paper);
+      box-shadow: inset 18px 0 30px rgba(0,0,0,.08);
+    }
+    .flipBack{
+      transform: rotateY(180deg);
+      background: linear-gradient(90deg, var(--paper2), var(--paper));
+      box-shadow: inset -18px 0 30px rgba(0,0,0,.08);
+    }
+    .shadowNext{
+      position:absolute;
+      top:0; left:50%;
+      width:50%; height:100%;
+      z-index: 8;
+      pointer-events:none;
+      opacity:0;
+      transition: opacity .10s ease;
+      background: radial-gradient(120% 90% at 0% 50%, rgba(0,0,0,.32), transparent 70%);
+    }
+    .shadowNext.on{ opacity:1; }
+
+    /* Prev flip（左） */
+    .flipPrev{
+      position:absolute;
+      top:0;
+      left:0;
+      width:50%;
+      height:100%;
+      transform-style: preserve-3d;
+      transform-origin: right center;
+      pointer-events:none;
+      z-index: 9;
+      display:none;
+      transition: transform var(--flipDur) cubic-bezier(.2,.75,.2,1);
+      box-shadow: 0 18px 40px rgba(0,0,0,.25);
+    }
+    .flipPrev.active{ display:block; }
+    .prevFront{
+      position:absolute;
+      inset:0;
+      backface-visibility:hidden;
+      overflow:hidden;
+      padding: clamp(18px, 2.2vw, 34px);
+      background: linear-gradient(90deg, var(--paper2), var(--paper));
+      box-shadow: inset -18px 0 30px rgba(0,0,0,.08);
+    }
+    .prevBack{
+      transform: rotateY(180deg);
+      background: var(--paper);
+      box-shadow: inset 18px 0 30px rgba(0,0,0,.08);
+    }
+    .shadowPrev{
+      position:absolute;
+      top:0; left:0;
+      width:50%; height:100%;
+      z-index: 8;
+      pointer-events:none;
+      opacity:0;
+      transition: opacity .10s ease;
+      background: radial-gradient(120% 90% at 100% 50%, rgba(0,0,0,.32), transparent 70%);
+    }
+    .shadowPrev.on{ opacity:1; }
+
+    /* クリック領域（右下・左下） */
+    .hotRight{
+      position:absolute; right:0; bottom:0;
+      width: 26%; height: 34%;
+      z-index: 20;
+      cursor:pointer;
+      border-top-left-radius: 30px;
+      background: transparent;
+    }
+    .hotLeft{
+      position:absolute; left:0; bottom:0;
+      width: 26%; height: 34%;
+      z-index: 20;
+      cursor:pointer;
+      border-top-right-radius: 30px;
+      background: transparent;
+    }
+
+    @media (max-width: 780px){
+      :root{ --coverShift: -70px; }
+    }
+  </style>
+</head>
+
 <body>
+  <div class="desk">
+    <div class="bookRig" id="bookRig">
 
-ここが本体です
+      <!-- 表紙（中央A4） -->
+      <div class="coverStage">
+        <div class="a4Wrap">
+          <div class="coverCard">
+            <div class="magTitle">Isabella</div>
+            <div class="magRow"><span>Portfolio</span></div>
+            <div class="openCorner" id="openCorner" title="open"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 見開き -->
+      <div class="spreadStage">
+        <div class="spreadWrap">
+          <div class="spine"></div>
+
+          <div class="spread under">
+            <section class="page left" id="uLeft"></section>
+            <section class="page right" id="uRight"></section>
+          </div>
+
+          <div class="spread current">
+            <section class="page left" id="cLeft"></section>
+            <section class="page right" id="cRight"></section>
+          </div>
+
+          <!-- Next flip -->
+          <div class="shadowNext" id="shadowNext"></div>
+          <div class="flipNext" id="flipNext" aria-hidden="true">
+            <div class="flipFace" id="nextFront"></div>
+            <div class="flipFace flipBack" id="nextBack"></div>
+          </div>
+
+          <!-- Prev flip -->
+          <div class="shadowPrev" id="shadowPrev"></div>
+          <div class="flipPrev" id="flipPrev" aria-hidden="true">
+            <div class="prevFront" id="prevFront"></div>
+            <div class="prevFront prevBack" id="prevBack"></div>
+          </div>
+
+          <!-- Click zones -->
+          <div class="hotRight" id="hotRight" title="next"></div>
+          <div class="hotLeft" id="hotLeft" title="prev"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const PAGES = {
+      1: { title:"Chapter 1", subtitle:"自己紹介", body:[
+        "マカオ出身映像制作を学びたくて、日本に留学しました。最近は生成AIの動画に興味があります",
+        "余白を意識すると本っぽく見えます。"
+      ]},
+      2: { title:"Chapter 2", subtitle:"好きなもの", body:[
+        "好きなアニメは「ジョジョの奇妙な冒険」です。理由は、ストーリーが何度見ても飽きないほど魅力的だからです。独特な画風と世界観も好きです。尊敬する人はその作者、荒木飛呂彦さん。理由は漫画家なのに、生活リズムが驚くほど整っています。朝5時起床・夜9時就寝という徹底していて、原稿の締め切りも遅れたことがないだそうです。あとはもちろん、発想力と世界観が羨ましいです。",
+        "ここに説明やストーリーを入れられます。"
+      ]},
+      3: { title:"Chapter 3", subtitle:"これまでの作品", body:[
+        "画像や図を置くページ（今回はテキストのみ）。",
+        "必要なら画像も入れられます。"
+      ]},
+      4: { title:"Chapter 4", subtitle:"最近", body:[
+        "動画生成や画像生成にハマっています",
+        "Thanks for reading!"
+      ]},
+    };
+    const SPREADS = [[1,2],[3,4]];
+
+    let mode = "frontCover"; // "frontCover" | "open"
+    let spreadIndex = 0;
+    let flipping = false;
+
+    const bookRig = document.getElementById("bookRig");
+    const openCorner = document.getElementById("openCorner");
+
+    const cLeft = document.getElementById("cLeft");
+    const cRight= document.getElementById("cRight");
+    const uLeft = document.getElementById("uLeft");
+    const uRight= document.getElementById("uRight");
+
+    const hotRight = document.getElementById("hotRight");
+    const hotLeft  = document.getElementById("hotLeft");
+
+    const flipNext = document.getElementById("flipNext");
+    const nextFront= document.getElementById("nextFront");
+    const nextBack = document.getElementById("nextBack");
+    const shadowNext = document.getElementById("shadowNext");
+
+    const flipPrev = document.getElementById("flipPrev");
+    const prevFront= document.getElementById("prevFront");
+    const prevBack = document.getElementById("prevBack");
+    const shadowPrev = document.getElementById("shadowPrev");
+
+    const FLIP_DUR = 850;
+    const MID_SWAP = Math.floor(FLIP_DUR * 0.50);
+
+    function pageHTML(idx, isLeft){
+      const p = PAGES[idx];
+      const body = p.body.map(t=>`<p>${t}</p>`).join("");
+      const markRight = isLeft ? "" : `<div class="flipMark">↘</div>`;
+      const markLeft  = isLeft ? `<div class="backMark">↙</div>` : "";
+      return `
+        <div class="kicker"><span>${p.title}</span><span>${String(idx).padStart(2,"0")}</span></div>
+        <div class="rule"></div>
+        <h3>${p.subtitle}</h3>
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">
+          ${body}
+        </div>
+        ${markLeft}${markRight}
+      `;
+    }
+
+    function setSpread(elL, elR, pair){
+      if(!pair){ elL.innerHTML=""; elR.innerHTML=""; return; }
+      elL.innerHTML = pageHTML(pair[0], true);
+      elR.innerHTML = pageHTML(pair[1], false);
+    }
+
+    function renderCurrent(){
+      setSpread(cLeft, cRight, SPREADS[spreadIndex]);
+      setSpread(uLeft, uRight, SPREADS[spreadIndex+1] ?? null);
+    }
+
+    function showFrontCover(){
+      mode = "frontCover";
+      bookRig.classList.remove("opened","opening");
+    }
+
+    function openBook(){
+      if (flipping || mode === "open") return;
+
+      flipping = true;
+      spreadIndex = 0;
+
+      // ★表紙だけ移動＆フリップ（bookRigは動かない → ページが左に行かない）
+      bookRig.classList.add("opening");
+      bookRig.classList.add("opened");
+
+      setTimeout(() => {
+        mode = "open";
+        renderCurrent();
+        bookRig.classList.remove("opening"); // 表紙移動もここで戻る（ただし表紙は消えてる）
+        flipping = false;
+      }, 520);
+    }
+
+    function closeToFrontCover(){
+      if (flipping) return;
+      flipping = true;
+
+      bookRig.classList.remove("opened");
+      setTimeout(() => {
+        showFrontCover();
+        flipping = false;
+      }, 160);
+    }
+
+    function next(){
+      if (mode !== "open" || flipping) return;
+
+      // 最後の見開きで右下 → 表紙に閉じる
+      if (spreadIndex >= SPREADS.length - 1){
+        closeToFrontCover();
+        return;
+      }
+
+      flipping = true;
+      const cur = SPREADS[spreadIndex];
+      const nxt = SPREADS[spreadIndex+1];
+
+      nextFront.innerHTML = pageHTML(cur[1], false);
+      nextBack.innerHTML  = pageHTML(nxt[0], true);
+
+      shadowNext.classList.add("on");
+      flipNext.classList.add("active");
+      flipNext.style.transform = "rotateY(0deg)";
+
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        flipNext.style.transform = "rotateY(-180deg)";
+      }));
+
+      const mid = setTimeout(()=>{
+        spreadIndex++;
+        setSpread(cLeft, cRight, SPREADS[spreadIndex]);
+        setSpread(uLeft, uRight, SPREADS[spreadIndex+1] ?? null);
+      }, MID_SWAP);
+
+      const finish = () => {
+        clearTimeout(mid);
+        shadowNext.classList.remove("on");
+        flipNext.classList.remove("active");
+        flipNext.style.transform = "rotateY(0deg)";
+        flipping = false;
+      };
+
+      let safety = setTimeout(finish, FLIP_DUR + 160);
+      const onEnd = (e)=>{
+        if(e.propertyName!=="transform") return;
+        clearTimeout(safety);
+        flipNext.removeEventListener("transitionend", onEnd);
+        finish();
+      };
+      flipNext.addEventListener("transitionend", onEnd);
+    }
+
+    function prev(){
+      if (mode !== "open" || flipping) return;
+
+      // 最初の見開きで左下 → 表紙に閉じる
+      if (spreadIndex === 0){
+        closeToFrontCover();
+        return;
+      }
+
+      flipping = true;
+      const cur = SPREADS[spreadIndex];
+      const prv = SPREADS[spreadIndex-1];
+
+      prevFront.innerHTML = pageHTML(cur[0], true);
+      prevBack.innerHTML  = pageHTML(prv[1], false);
+
+      shadowPrev.classList.add("on");
+      flipPrev.classList.add("active");
+      flipPrev.style.transform = "rotateY(0deg)";
+
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        flipPrev.style.transform = "rotateY(180deg)";
+      }));
+
+      const mid = setTimeout(()=>{
+        spreadIndex--;
+        setSpread(cLeft, cRight, SPREADS[spreadIndex]);
+        setSpread(uLeft, uRight, SPREADS[spreadIndex+1] ?? null);
+      }, MID_SWAP);
+
+      const finish = () => {
+        clearTimeout(mid);
+        shadowPrev.classList.remove("on");
+        flipPrev.classList.remove("active");
+        flipPrev.style.transform = "rotateY(0deg)";
+        flipping = false;
+      };
+
+      let safety = setTimeout(finish, FLIP_DUR + 160);
+      const onEnd = (e)=>{
+        if(e.propertyName!=="transform") return;
+        clearTimeout(safety);
+        flipPrev.removeEventListener("transitionend", onEnd);
+        finish();
+      };
+      flipPrev.addEventListener("transitionend", onEnd);
+    }
+
+    openCorner.addEventListener("click", openBook);
+
+    hotRight.addEventListener("click", ()=>{
+      if (mode === "frontCover") openBook();
+      else if (mode === "open") next();
+    });
+
+    hotLeft.addEventListener("click", ()=>{
+      if (mode === "open") prev();
+    });
+
+    showFrontCover();
+  </script>
 </body>
-
 </html>

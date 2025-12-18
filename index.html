@@ -272,7 +272,7 @@
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      font-size:12px;
+      font-size:14px;
       color: rgba(17,24,39,.56);
       letter-spacing:.02em;
     }
@@ -285,12 +285,13 @@
       letter-spacing:.01em;
       line-height:1.2;
     }
-    .page p{
-      margin:0;
-      line-height:1.92;
-      font-size: clamp(13px, 1.1vw, 15px);
-      color: rgba(17,24,39,.80);
-    }
+  .page p{
+  margin:0;
+  line-height:1.92;
+  font-size: clamp(16px, 1.35vw, 19px);
+  color: rgba(17,24,39,.80);
+}
+
 
     .workShot{
       margin-top: 12px;
@@ -306,7 +307,7 @@
       box-shadow: 0 14px 30px rgba(0,0,0,.12);
     }
     .workCaption{
-      font-size: 12px;
+      font-size: 14px;
       color: rgba(16,24,39,.60);
     }
 
@@ -327,7 +328,7 @@
       position:absolute;
       right: 16px;
       bottom: 12px;
-      font-size: 12px;
+      font-size: 14px;
       color: rgba(16,24,39,.60);
       user-select:none;
       pointer-events:none;
@@ -350,7 +351,7 @@
       position:absolute;
       left: 16px;
       bottom: 12px;
-      font-size: 12px;
+      font-size: 14px;
       color: rgba(16,24,39,.58);
       user-select:none;
       pointer-events:none;
@@ -527,32 +528,32 @@
 
   <script>
     const PAGES = {
-      1: { title:"Chapter 1", subtitle:"自己紹介", body:[
+      1: { title:"Self Introduction", subtitle:"自己紹介", body:[
         "マカオ出身\n映像制作を学びたくて、日本に留学しました。",
         "最近は生成AIの動画に興味があります"
       ]},
-      2: { title:"Chapter 2", subtitle:"好きなもの", body:[
+      2: { title:"Hobby", subtitle:"好きなもの", body:[
         "好きなアニメは「ジョジョの奇妙な冒険」です。理由は、ストーリーが何度見ても飽きないほど魅力的だからです。独特な画風と世界観も好きです。尊敬する人はその作者、荒木飛呂彦さん。理由は漫画家なのに、生活リズムが驚くほど整っています。朝5時起床・夜9時就寝という徹底していて、原稿の締め切りも遅れたことがないだそうです。あとはもちろん、発想力と世界観が羨ましいです。",
         " "
       ]},
       3: {
-        title:"Chapter 3",
+        title:"Works",
         subtitle:"これまでの作品",
         body:[
-          "ここに作品説明（短め）を入れて、下に画像を置くのがおすすめです。"
+          "グラフィックデザイン"
         ],
         extraHTML: `
           <div class="workShot">
             <img src="assets/img/birdweek_copy.jpg" alt="作品サンプル" loading="lazy">
-            <div class="workCaption">作品サンプル</div>
+            <div class="workCaption"></div>
           </div>
         `
       },
       4: {
-        title:"Chapter 4",
-        subtitle:"最近",
+        title:"Works",
+        subtitle:"",
         body:[
-          "動画生成や画像生成にハマっています",
+          "",
           {
             html: `
               <div class="ytWrap">

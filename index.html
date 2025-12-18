@@ -4,10 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Flip Book</title>
+
   <style>
     :root{
-      --bg1:#eff8ff;
-      --bg2:#3f77a2;
+      --bg:#cfdde8;
 
       --paper:#fbf7ef;
       --paper2:#f3eddc;
@@ -16,72 +16,80 @@
 
       --coverA:#fbf7ef;
       --coverB:#fbf7ef;
-      --white: rgba(255,255,255,.92);
+      --coverText:#34373a;
 
       --r: 18px;
       --serif: ui-serif, "Times New Roman", "Noto Serif JP", serif;
       --sans: ui-sans-serif, system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif;
 
-      --a4W: min(420px, 52vw);
-      --a4H: calc(var(--a4W) * 1.414);
+      /* size */
+      --bookW: min(80vw, 1400px);
+      --bookH: min(80vh, 900px);
 
-      /* 表紙だけ左に寄せる量（本全体は動かさない） */
+      /* Cover A4 (cap width so it won't cut on mobile) */
+      --a4H: min(78vh, 820px);
+      --a4W: min(calc(var(--a4H) / 1.414), 92vw);
+
+      /* cover shift (only during opening) */
       --coverShift: -120px;
 
-      /* フリップ時間 */
-      --flipDur: 850ms;
+      /* durations (faster & smoother) */
+      --flipDur: 600ms;     /* was 850ms */
+      --coverDur: 480ms;    /* cover open faster */
     }
 
     *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+
     body{
       margin:0;
-      min-height:100svh;
       display:grid;
       place-items:center;
       font-family: var(--sans);
-      background:
-        radial-gradient(1200px 700px at 18% 12%, rgba(255,79,179,.14), transparent 55%),
-        radial-gradient(900px 600px at 78% 64%, rgba(99,102,241,.14), transparent 55%),
-        linear-gradient(160deg, var(--bg1), var(--bg2));
+      background: var(--bg);
       overflow:hidden;
     }
 
     .desk{
-      position:relative;
-      width: min(1100px, 92vw);
-      height: min(680px, 74vh);
+      width: 100vw;
+      height: 100vh;
       display:grid;
       place-items:center;
       perspective: 2200px;
+
+      /* safe padding for cover on phones */
+      padding:
+        max(16px, env(safe-area-inset-top))
+        max(16px, env(safe-area-inset-right))
+        max(16px, env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
     }
 
-    /* 本は常にセンター固定（ここ重要） */
     .bookRig{
       position:relative;
-      width: min(980px, 100%);
-      height: min(580px, 100%);
+      width: var(--bookW);
+      height: var(--bookH);
       transform-style: preserve-3d;
-      transform: translateX(0);
     }
 
-    /* 台座影（立体感） */
+    /* stronger book shadow */
     .bookRig::before{
       content:"";
       position:absolute;
       left:50%;
-      bottom:-26px;
-      width: 88%;
-      height: 34px;
+      bottom:-34px;
+      width: 94%;
+      height: 44px;
       transform: translateX(-50%);
-      background: radial-gradient(closest-side, rgba(0,0,0,.55), transparent 70%);
-      filter: blur(6px);
-      opacity:.85;
+      background: radial-gradient(closest-side, rgba(0,0,0,.35), transparent 72%);
+      filter: blur(10px);
+      opacity:.95;
       pointer-events:none;
       z-index:0;
     }
 
     /* ======================
-       表紙（中央A4）※動くのはここだけ
+       Cover
        ====================== */
     .coverStage{
       position:absolute;
@@ -92,6 +100,7 @@
       opacity:1;
       visibility:visible;
       transition: opacity .12s ease, visibility 0s linear;
+      padding: clamp(14px, 4vw, 28px); /* prevent cut */
     }
     .bookRig.opened .coverStage{
       opacity:0;
@@ -103,13 +112,15 @@
     .a4Wrap{
       width: var(--a4W);
       height: var(--a4H);
+      max-width: 100%;
+      max-height: 100%;
       position:relative;
       transform-style: preserve-3d;
       transform: translateX(0);
       transition: transform .35s cubic-bezier(.2,.8,.2,1);
+      margin: 0 auto;
     }
 
-    /* ★開く瞬間だけ表紙を左へ（spreadは動かない） */
     .bookRig.opening .a4Wrap{
       transform: translateX(var(--coverShift));
     }
@@ -120,18 +131,14 @@
       border-radius: var(--r);
       transform-style: preserve-3d;
       transform-origin: left center;
-      transition: transform .70s cubic-bezier(.2,.75,.2,1);
-      box-shadow:
-        0 26px 80px rgba(0,0,0,.55),
-        0 8px 18px rgba(0,0,0,.25);
-      border: 1px solid rgba(255,255,255,.12);
+      transition: transform var(--coverDur) cubic-bezier(.2,.75,.2,1);
+      border: 1px solid rgba(0,0,0,.08);
       overflow:hidden;
-      background:
-        radial-gradient(900px 550px at 30% 18%, rgba(255,79,179,.18), transparent 55%),
-        radial-gradient(900px 700px at 78% 70%, rgba(99,102,241,.16), transparent 60%),
-        linear-gradient(135deg, var(--coverA), var(--coverB));
+      background: linear-gradient(135deg, var(--coverA), var(--coverB));
+      box-shadow:
+        0 26px 70px rgba(0,0,0,.22),
+        0 10px 22px rgba(0,0,0,.14);
     }
-
     .bookRig.opening .coverCard{ transform: rotateY(-155deg); }
 
     .magTitle{
@@ -141,12 +148,12 @@
       right: 20px;
       font-family: var(--serif);
       font-weight: 800;
-      font-size: 57px;
+      font-size: clamp(40px, 5vw, 64px);
       letter-spacing: .08em;
       text-transform: uppercase;
-      color: var(--white);
+      color: var(--coverText);
       line-height: 1;
-      text-shadow: 0 14px 40px rgba(0,0,0,.35);
+      text-shadow: 0 10px 30px rgba(0,0,0,.10);
     }
     .magRow{
       position:absolute;
@@ -156,14 +163,14 @@
       display:flex;
       justify-content:space-between;
       font-family: var(--serif);
-      font-size: 50px;
+      font-size: clamp(28px, 4.2vw, 54px);
       letter-spacing:.14em;
       text-transform: uppercase;
-      color: rgba(255,255,255,.86);
+      color: var(--coverText);
       font-weight: 800;
+      opacity: .95;
     }
 
-    /* 表紙：右下クリック領域（見える影付き） */
     .openCorner{
       position:absolute;
       right:0; bottom:0;
@@ -177,16 +184,16 @@
       content:"";
       position:absolute;
       right: 0; bottom: 0;
-      width: 70px; height: 70px;
+      width: 78px; height: 78px;
       clip-path: polygon(100% 0, 0 100%, 100% 100%);
-      background: linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,0));
-      filter: drop-shadow(0 6px 10px rgba(0,0,0,.35));
-      opacity:.9;
+      background: linear-gradient(135deg, rgba(0,0,0,.08), rgba(0,0,0,0));
+      filter: drop-shadow(0 8px 12px rgba(0,0,0,.18));
+      opacity:.95;
       pointer-events:none;
     }
 
     /* ======================
-       見開き
+       Spread
        ====================== */
     .spreadStage{
       position:absolute;
@@ -198,6 +205,7 @@
       pointer-events:none;
       transition: opacity .12s ease, visibility 0s linear .12s;
       z-index: 2;
+      padding: 10px;
     }
     .bookRig.opened .spreadStage{
       opacity:1;
@@ -207,11 +215,11 @@
     }
 
     .spreadWrap{
-      width: min(980px, 100%);
-      height: min(580px, 100%);
+      width: 100%;
+      height: 100%;
       position:relative;
       z-index:1;
-      filter: drop-shadow(0 18px 50px rgba(0,0,0,.45));
+      filter: drop-shadow(0 22px 44px rgba(0,0,0,.22));
     }
 
     .spine{
@@ -221,7 +229,7 @@
       width:10px;
       height:100%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,.22);
+      background: rgba(0,0,0,.18);
       border-radius: 10px;
       opacity:.92;
       z-index: 6;
@@ -237,8 +245,8 @@
       overflow:hidden;
       background: var(--paper);
       box-shadow:
-        0 0 0 1px rgba(255,255,255,.06) inset,
-        0 10px 28px rgba(0,0,0,.18);
+        0 0 0 1px rgba(0,0,0,.06) inset,
+        0 12px 28px rgba(0,0,0,.12);
     }
     .spread.under{ z-index: 2; }
     .spread.current{ z-index: 4; }
@@ -249,6 +257,7 @@
       color: var(--ink);
       overflow:hidden;
       background: var(--paper);
+      font-family: var(--sans);
     }
     .page.left{
       background: linear-gradient(90deg, var(--paper2), var(--paper));
@@ -272,20 +281,18 @@
       margin:0;
       font-family: var(--serif);
       font-weight: 800;
-      font-size: clamp(18px, 2.2vw, 26px);
+      font-size: clamp(18px, 2.2vw, 28px);
       letter-spacing:.01em;
       line-height:1.2;
     }
     .page p{
       margin:0;
       line-height:1.92;
-      font-size: 14px;
+      font-size: clamp(13px, 1.1vw, 15px);
       color: rgba(17,24,39,.80);
     }
 
-    /* ========= 角の“影”でクリック誘導 ========= */
-
-    /* 右ページ：右下（次へ） */
+    /* Right-bottom cue (next) */
     .page.right::after{
       content:"";
       position:absolute;
@@ -294,8 +301,8 @@
       width: 74px;
       height: 74px;
       clip-path: polygon(100% 0, 0 100%, 100% 100%);
-      background: linear-gradient(135deg, rgba(16,24,39,.18), rgba(16,24,39,0));
-      filter: drop-shadow(0 10px 14px rgba(0,0,0,.22));
+      background: linear-gradient(135deg, rgba(16,24,39,.16), rgba(16,24,39,0));
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,.14));
       opacity:.9;
       pointer-events:none;
     }
@@ -309,7 +316,7 @@
       pointer-events:none;
     }
 
-    /* 左ページ：左下（戻る） */
+    /* Left-bottom cue (prev) on LEFT page (desktop) */
     .page.left::before{
       content:"";
       position:absolute;
@@ -318,8 +325,8 @@
       width: 74px;
       height: 74px;
       clip-path: polygon(0 0, 0 100%, 100% 100%);
-      background: linear-gradient(225deg, rgba(16,24,39,.16), rgba(16,24,39,0));
-      filter: drop-shadow(0 10px 14px rgba(0,0,0,.18));
+      background: linear-gradient(225deg, rgba(16,24,39,.14), rgba(16,24,39,0));
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,.12));
       opacity:.85;
       pointer-events:none;
     }
@@ -333,7 +340,7 @@
       pointer-events:none;
     }
 
-    /* Next flip（右） */
+    /* Flip layers */
     .flipNext{
       position:absolute;
       top:0;
@@ -346,23 +353,13 @@
       z-index: 9;
       display:none;
       transition: transform var(--flipDur) cubic-bezier(.2,.75,.2,1);
-      box-shadow: 0 18px 40px rgba(0,0,0,.25);
+      will-change: transform;
+      box-shadow: 0 18px 40px rgba(0,0,0,.18);
     }
     .flipNext.active{ display:block; }
-    .flipFace{
-      position:absolute;
-      inset:0;
-      backface-visibility:hidden;
-      overflow:hidden;
-      padding: clamp(18px, 2.2vw, 34px);
-      background: var(--paper);
-      box-shadow: inset 18px 0 30px rgba(0,0,0,.08);
-    }
-    .flipBack{
-      transform: rotateY(180deg);
-      background: linear-gradient(90deg, var(--paper2), var(--paper));
-      box-shadow: inset -18px 0 30px rgba(0,0,0,.08);
-    }
+    .flipFace{ position:absolute; inset:0; backface-visibility:hidden; }
+    .flipBack{ transform: rotateY(180deg); }
+
     .shadowNext{
       position:absolute;
       top:0; left:50%;
@@ -370,12 +367,11 @@
       z-index: 8;
       pointer-events:none;
       opacity:0;
-      transition: opacity .10s ease;
-      background: radial-gradient(120% 90% at 0% 50%, rgba(0,0,0,.32), transparent 70%);
+      transition: opacity .08s ease;
+      background: radial-gradient(120% 90% at 0% 50%, rgba(0,0,0,.22), transparent 70%);
     }
     .shadowNext.on{ opacity:1; }
 
-    /* Prev flip（左） */
     .flipPrev{
       position:absolute;
       top:0;
@@ -388,23 +384,13 @@
       z-index: 9;
       display:none;
       transition: transform var(--flipDur) cubic-bezier(.2,.75,.2,1);
-      box-shadow: 0 18px 40px rgba(0,0,0,.25);
+      will-change: transform;
+      box-shadow: 0 18px 40px rgba(0,0,0,.18);
     }
     .flipPrev.active{ display:block; }
-    .prevFront{
-      position:absolute;
-      inset:0;
-      backface-visibility:hidden;
-      overflow:hidden;
-      padding: clamp(18px, 2.2vw, 34px);
-      background: linear-gradient(90deg, var(--paper2), var(--paper));
-      box-shadow: inset -18px 0 30px rgba(0,0,0,.08);
-    }
-    .prevBack{
-      transform: rotateY(180deg);
-      background: var(--paper);
-      box-shadow: inset 18px 0 30px rgba(0,0,0,.08);
-    }
+    .prevFace{ position:absolute; inset:0; backface-visibility:hidden; }
+    .prevBack{ transform: rotateY(180deg); }
+
     .shadowPrev{
       position:absolute;
       top:0; left:0;
@@ -412,12 +398,11 @@
       z-index: 8;
       pointer-events:none;
       opacity:0;
-      transition: opacity .10s ease;
-      background: radial-gradient(120% 90% at 100% 50%, rgba(0,0,0,.32), transparent 70%);
+      transition: opacity .08s ease;
+      background: radial-gradient(120% 90% at 100% 50%, rgba(0,0,0,.22), transparent 70%);
     }
     .shadowPrev.on{ opacity:1; }
 
-    /* クリック領域（右下・左下） */
     .hotRight{
       position:absolute; right:0; bottom:0;
       width: 26%; height: 34%;
@@ -435,8 +420,48 @@
       background: transparent;
     }
 
-    @media (max-width: 780px){
-      :root{ --coverShift: -70px; }
+    /* ======================
+       Mobile
+       ====================== */
+    @media (max-width: 760px){
+      body{ overflow:auto; }        /* ★coverが隠れるのを防ぐ */
+      .desk{ overflow: visible; }   /* ★切れ防止 */
+
+      :root{
+        --bookW: 94vw;
+        --bookH: 86vh;
+        --coverShift: -70px;
+        --a4H: min(78vh, 720px);
+        --a4W: min(calc(var(--a4H) / 1.414), 92vw);
+      }
+
+      .spine{ display:none; }
+      .spread{ grid-template-columns: 1fr; }
+      .spread .page.left{ display:none; }
+      .spread .page.right{ grid-column: 1 / -1; }
+
+      .flipNext{ left:0; width:100%; }
+      .shadowNext{ left:0; width:100%; background: radial-gradient(120% 90% at 0% 50%, rgba(0,0,0,.18), transparent 70%); }
+
+      .flipPrev{ width:100%; }
+      .shadowPrev{ width:100%; background: radial-gradient(120% 90% at 100% 50%, rgba(0,0,0,.18), transparent 70%); }
+
+      .hotRight,.hotLeft{ width: 40%; height: 30%; }
+
+      /* ★PHONE ONLY: show left-bottom shadow cue on the single page IF can prev */
+      .spreadWrap[data-can-prev="true"] .page.right::before{
+        content:"";
+        position:absolute;
+        left: 0;
+        bottom: 0;
+        width: 74px;
+        height: 74px;
+        clip-path: polygon(0 0, 0 100%, 100% 100%);
+        background: linear-gradient(225deg, rgba(16,24,39,.14), rgba(16,24,39,0));
+        filter: drop-shadow(0 10px 14px rgba(0,0,0,.12));
+        opacity:.85;
+        pointer-events:none;
+      }
     }
   </style>
 </head>
@@ -445,7 +470,7 @@
   <div class="desk">
     <div class="bookRig" id="bookRig">
 
-      <!-- 表紙（中央A4） -->
+      <!-- Cover -->
       <div class="coverStage">
         <div class="a4Wrap">
           <div class="coverCard">
@@ -456,38 +481,38 @@
         </div>
       </div>
 
-      <!-- 見開き -->
+      <!-- Spread -->
       <div class="spreadStage">
-        <div class="spreadWrap">
+        <div class="spreadWrap" id="spreadWrap">
           <div class="spine"></div>
 
           <div class="spread under">
-            <section class="page left" id="uLeft"></section>
+            <section class="page left"  id="uLeft"></section>
             <section class="page right" id="uRight"></section>
           </div>
 
           <div class="spread current">
-            <section class="page left" id="cLeft"></section>
+            <section class="page left"  id="cLeft"></section>
             <section class="page right" id="cRight"></section>
           </div>
 
           <!-- Next flip -->
           <div class="shadowNext" id="shadowNext"></div>
           <div class="flipNext" id="flipNext" aria-hidden="true">
-            <div class="flipFace" id="nextFront"></div>
-            <div class="flipFace flipBack" id="nextBack"></div>
+            <section class="page right flipFace" id="nextFront"></section>
+            <section class="page left  flipFace flipBack" id="nextBack"></section>
           </div>
 
           <!-- Prev flip -->
           <div class="shadowPrev" id="shadowPrev"></div>
           <div class="flipPrev" id="flipPrev" aria-hidden="true">
-            <div class="prevFront" id="prevFront"></div>
-            <div class="prevFront prevBack" id="prevBack"></div>
+            <section class="page left  prevFace" id="prevFront"></section>
+            <section class="page right prevFace prevBack" id="prevBack"></section>
           </div>
 
           <!-- Click zones -->
           <div class="hotRight" id="hotRight" title="next"></div>
-          <div class="hotLeft" id="hotLeft" title="prev"></div>
+          <div class="hotLeft"  id="hotLeft"  title="prev"></div>
         </div>
       </div>
 
@@ -504,23 +529,51 @@
         "好きなアニメは「ジョジョの奇妙な冒険」です。理由は、ストーリーが何度見ても飽きないほど魅力的だからです。独特な画風と世界観も好きです。尊敬する人はその作者、荒木飛呂彦さん。理由は漫画家なのに、生活リズムが驚くほど整っています。朝5時起床・夜9時就寝という徹底していて、原稿の締め切りも遅れたことがないだそうです。あとはもちろん、発想力と世界観が羨ましいです。",
         "ここに説明やストーリーを入れられます。"
       ]},
-      3: { title:"Chapter 3", subtitle:"これまでの作品", body:[
-        "画像や図を置くページ（今回はテキストのみ）。",
-        "必要なら画像も入れられます。"
-      ]},
+      3: {
+        title:"Chapter 3",
+        subtitle:"これまでの作品",
+        body:[
+          "ここに作品説明（短め）を入れて、下に画像＋リンクを置くのがおすすめです。"
+        ],
+        extraHTML: `
+          <div class="workShot">
+            <img
+              src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1600&q=70"
+              alt="作品サンプル"
+              loading="lazy"
+            />
+            <div class="workCaption">作品サンプル（画像URLは好きなものに差し替えてOK）</div>
+          </div>
+          <a class="workLink" href="https://example.com" target="_blank" rel="noopener noreferrer">
+            作品リンクを見る →
+          </a>
+        `
+      },
       4: { title:"Chapter 4", subtitle:"最近", body:[
         "動画生成や画像生成にハマっています",
         "Thanks for reading!"
       ]},
     };
-    const SPREADS = [[1,2],[3,4]];
 
-    let mode = "frontCover"; // "frontCover" | "open"
-    let spreadIndex = 0;
+    const ORDER = Object.keys(PAGES).map(Number).sort((a,b)=>a-b);
+    const TOTAL = ORDER.length;
+
+    const SPREADS = [];
+    for(let i=0;i<ORDER.length;i+=2){
+      SPREADS.push([ORDER[i], ORDER[i+1] ?? ORDER[i]]);
+    }
+
+    const mql = window.matchMedia("(max-width: 760px)");
+    const isMobile = () => mql.matches;
+
+    let mode = "frontCover";
+    let cursor = 0;
     let flipping = false;
 
     const bookRig = document.getElementById("bookRig");
     const openCorner = document.getElementById("openCorner");
+
+    const spreadWrap = document.getElementById("spreadWrap");
 
     const cLeft = document.getElementById("cLeft");
     const cRight= document.getElementById("cRight");
@@ -540,34 +593,84 @@
     const prevBack = document.getElementById("prevBack");
     const shadowPrev = document.getElementById("shadowPrev");
 
-    const FLIP_DUR = 850;
-    const MID_SWAP = Math.floor(FLIP_DUR * 0.50);
+    // keep JS duration in sync with CSS var (read once)
+    const getMsVar = (name, fallback) => {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      if(!v) return fallback;
+      if(v.endsWith("ms")) return parseFloat(v);
+      if(v.endsWith("s")) return parseFloat(v)*1000;
+      return fallback;
+    };
 
-    function pageHTML(idx, isLeft){
+    let FLIP_DUR = getMsVar("--flipDur", 600);
+    let MID_SWAP = Math.floor(FLIP_DUR * 0.35); // earlier swap = feels snappier
+
+    const esc = (s)=> String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#39;");
+
+    function pageHTML(idx, {showBackMark=false, showNextMark=false} = {}){
       const p = PAGES[idx];
-      const body = p.body.map(t=>`<p>${t}</p>`).join("");
-      const markRight = isLeft ? "" : `<div class="flipMark">↘</div>`;
-      const markLeft  = isLeft ? `<div class="backMark">↙</div>` : "";
+      const body = (p.body ?? []).map(t=>`<p>${esc(t)}</p>`).join("");
+      const markRight = showNextMark ? `<div class="flipMark">↘</div>` : "";
+      const markLeft  = showBackMark ? `<div class="backMark">↙</div>` : "";
+      const extra = p.extraHTML ? `<div style="margin-top:12px;">${p.extraHTML}</div>` : "";
       return `
-        <div class="kicker"><span>${p.title}</span><span>${String(idx).padStart(2,"0")}</span></div>
+        <div class="kicker"><span>${esc(p.title)}</span><span>${String(idx).padStart(2,"0")}</span></div>
         <div class="rule"></div>
-        <h3>${p.subtitle}</h3>
+        <h3>${esc(p.subtitle)}</h3>
         <div style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">
           ${body}
         </div>
+        ${extra}
         ${markLeft}${markRight}
       `;
     }
 
-    function setSpread(elL, elR, pair){
-      if(!pair){ elL.innerHTML=""; elR.innerHTML=""; return; }
-      elL.innerHTML = pageHTML(pair[0], true);
-      elR.innerHTML = pageHTML(pair[1], false);
+    function setPage(el, idx, opts){
+      if(!idx){ el.innerHTML = ""; return; }
+      el.innerHTML = pageHTML(idx, opts);
+    }
+
+    function updateMobileCues(){
+      // Phone only: show left-bottom cue if can go back
+      if(isMobile()){
+        spreadWrap.dataset.canPrev = String(cursor > 0);
+      }else{
+        delete spreadWrap.dataset.canPrev;
+      }
     }
 
     function renderCurrent(){
-      setSpread(cLeft, cRight, SPREADS[spreadIndex]);
-      setSpread(uLeft, uRight, SPREADS[spreadIndex+1] ?? null);
+      if(isMobile()){
+        const curPage = ORDER[cursor];
+        const nextPage = ORDER[cursor+1] ?? null;
+
+        cLeft.innerHTML = "";
+        uLeft.innerHTML = "";
+
+        setPage(cRight, curPage, { showBackMark: cursor>0, showNextMark: cursor < TOTAL-1 });
+        setPage(uRight, nextPage, { showBackMark: true, showNextMark: true });
+
+        updateMobileCues();
+      }else{
+        const cur = SPREADS[cursor];
+        const under = SPREADS[cursor+1] ?? null;
+
+        setPage(cLeft,  cur[0], { showBackMark: cursor>0, showNextMark:false });
+        setPage(cRight, cur[1], { showBackMark:false, showNextMark:true });
+
+        if(under){
+          setPage(uLeft,  under[0], { showBackMark:true, showNextMark:false });
+          setPage(uRight, under[1], { showBackMark:false, showNextMark:true });
+        }else{
+          uLeft.innerHTML = "";
+          uRight.innerHTML = "";
+        }
+      }
     }
 
     function showFrontCover(){
@@ -579,18 +682,20 @@
       if (flipping || mode === "open") return;
 
       flipping = true;
-      spreadIndex = 0;
+      cursor = 0;
 
-      // ★表紙だけ移動＆フリップ（bookRigは動かない → ページが左に行かない）
+      // Always render 1/2 BEFORE showing the spread (prevents wrong flash)
+      renderCurrent();
+
       bookRig.classList.add("opening");
       bookRig.classList.add("opened");
 
+      // shorter than before; feels instant
       setTimeout(() => {
         mode = "open";
-        renderCurrent();
-        bookRig.classList.remove("opening"); // 表紙移動もここで戻る（ただし表紙は消えてる）
+        bookRig.classList.remove("opening");
         flipping = false;
-      }, 520);
+      }, 320);
     }
 
     function closeToFrontCover(){
@@ -604,35 +709,19 @@
       }, 160);
     }
 
-    function next(){
-      if (mode !== "open" || flipping) return;
-
-      // 最後の見開きで右下 → 表紙に閉じる
-      if (spreadIndex >= SPREADS.length - 1){
-        closeToFrontCover();
-        return;
-      }
-
-      flipping = true;
-      const cur = SPREADS[spreadIndex];
-      const nxt = SPREADS[spreadIndex+1];
-
-      nextFront.innerHTML = pageHTML(cur[1], false);
-      nextBack.innerHTML  = pageHTML(nxt[0], true);
+    function startNextFlip(frontHTML, backHTML, onMidSwap){
+      nextFront.innerHTML = frontHTML;
+      nextBack.innerHTML  = backHTML;
 
       shadowNext.classList.add("on");
       flipNext.classList.add("active");
       flipNext.style.transform = "rotateY(0deg)";
 
-      requestAnimationFrame(()=>requestAnimationFrame(()=>{
-        flipNext.style.transform = "rotateY(-180deg)";
-      }));
+      // force reflow then animate immediately (no RAF delay)
+      flipNext.offsetHeight;
+      flipNext.style.transform = "rotateY(-180deg)";
 
-      const mid = setTimeout(()=>{
-        spreadIndex++;
-        setSpread(cLeft, cRight, SPREADS[spreadIndex]);
-        setSpread(uLeft, uRight, SPREADS[spreadIndex+1] ?? null);
-      }, MID_SWAP);
+      const mid = setTimeout(onMidSwap, MID_SWAP);
 
       const finish = () => {
         clearTimeout(mid);
@@ -642,7 +731,7 @@
         flipping = false;
       };
 
-      let safety = setTimeout(finish, FLIP_DUR + 160);
+      let safety = setTimeout(finish, FLIP_DUR + 120);
       const onEnd = (e)=>{
         if(e.propertyName!=="transform") return;
         clearTimeout(safety);
@@ -652,35 +741,18 @@
       flipNext.addEventListener("transitionend", onEnd);
     }
 
-    function prev(){
-      if (mode !== "open" || flipping) return;
-
-      // 最初の見開きで左下 → 表紙に閉じる
-      if (spreadIndex === 0){
-        closeToFrontCover();
-        return;
-      }
-
-      flipping = true;
-      const cur = SPREADS[spreadIndex];
-      const prv = SPREADS[spreadIndex-1];
-
-      prevFront.innerHTML = pageHTML(cur[0], true);
-      prevBack.innerHTML  = pageHTML(prv[1], false);
+    function startPrevFlip(frontHTML, backHTML, onMidSwap){
+      prevFront.innerHTML = frontHTML;
+      prevBack.innerHTML  = backHTML;
 
       shadowPrev.classList.add("on");
       flipPrev.classList.add("active");
       flipPrev.style.transform = "rotateY(0deg)";
 
-      requestAnimationFrame(()=>requestAnimationFrame(()=>{
-        flipPrev.style.transform = "rotateY(180deg)";
-      }));
+      flipPrev.offsetHeight; // force reflow
+      flipPrev.style.transform = "rotateY(180deg)";
 
-      const mid = setTimeout(()=>{
-        spreadIndex--;
-        setSpread(cLeft, cRight, SPREADS[spreadIndex]);
-        setSpread(uLeft, uRight, SPREADS[spreadIndex+1] ?? null);
-      }, MID_SWAP);
+      const mid = setTimeout(onMidSwap, MID_SWAP);
 
       const finish = () => {
         clearTimeout(mid);
@@ -690,7 +762,7 @@
         flipping = false;
       };
 
-      let safety = setTimeout(finish, FLIP_DUR + 160);
+      let safety = setTimeout(finish, FLIP_DUR + 120);
       const onEnd = (e)=>{
         if(e.propertyName!=="transform") return;
         clearTimeout(safety);
@@ -700,16 +772,109 @@
       flipPrev.addEventListener("transitionend", onEnd);
     }
 
+    function next(){
+      if (mode !== "open" || flipping) return;
+
+      if(isMobile()){
+        if (cursor >= TOTAL - 1){
+          closeToFrontCover();
+          return;
+        }
+        flipping = true;
+
+        const curPage = ORDER[cursor];
+        const nxtPage = ORDER[cursor+1];
+
+        startNextFlip(
+          pageHTML(curPage, { showBackMark: cursor>0, showNextMark:true }),
+          pageHTML(nxtPage, { showBackMark:true, showNextMark: (cursor+1) < TOTAL-1 }),
+          () => { cursor++; renderCurrent(); }
+        );
+        return;
+      }
+
+      if (cursor >= SPREADS.length - 1){
+        closeToFrontCover();
+        return;
+      }
+      flipping = true;
+
+      const cur = SPREADS[cursor];
+      const nxt = SPREADS[cursor+1];
+
+      startNextFlip(
+        pageHTML(cur[1], { showBackMark:false, showNextMark:true }),
+        pageHTML(nxt[0], { showBackMark:true, showNextMark:false }),
+        () => { cursor++; renderCurrent(); }
+      );
+    }
+
+    function prev(){
+      if (mode !== "open" || flipping) return;
+
+      if(isMobile()){
+        if (cursor === 0){
+          closeToFrontCover();
+          return;
+        }
+        flipping = true;
+
+        const curPage = ORDER[cursor];
+        const prvPage = ORDER[cursor-1];
+
+        startPrevFlip(
+          pageHTML(curPage, { showBackMark:true, showNextMark: cursor < TOTAL-1 }),
+          pageHTML(prvPage, { showBackMark: (cursor-1)>0, showNextMark:true }),
+          () => { cursor--; renderCurrent(); }
+        );
+        return;
+      }
+
+      if (cursor === 0){
+        closeToFrontCover();
+        return;
+      }
+      flipping = true;
+
+      const cur = SPREADS[cursor];
+      const prv = SPREADS[cursor-1];
+
+      startPrevFlip(
+        pageHTML(cur[0], { showBackMark:true, showNextMark:false }),
+        pageHTML(prv[1], { showBackMark:false, showNextMark:true }),
+        () => { cursor--; renderCurrent(); }
+      );
+    }
+
+    function syncCursorOnResize(){
+      // refresh durations (CSS vars may change with media query)
+      FLIP_DUR = getMsVar("--flipDur", 600);
+      MID_SWAP = Math.floor(FLIP_DUR * 0.35);
+
+      if(mode !== "open") return;
+
+      if(isMobile()){
+        const leftPage = SPREADS[cursor]?.[0] ?? ORDER[0];
+        cursor = Math.max(0, ORDER.indexOf(leftPage));
+      }else{
+        const pageIdx = Math.max(0, Math.min(ORDER.length-1, cursor));
+        cursor = Math.floor(pageIdx / 2);
+      }
+      renderCurrent();
+    }
+
     openCorner.addEventListener("click", openBook);
 
     hotRight.addEventListener("click", ()=>{
       if (mode === "frontCover") openBook();
-      else if (mode === "open") next();
+      else next();
     });
 
     hotLeft.addEventListener("click", ()=>{
       if (mode === "open") prev();
     });
+
+    mql.addEventListener?.("change", syncCursorOnResize);
 
     showFrontCover();
   </script>

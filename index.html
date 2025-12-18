@@ -7,18 +7,18 @@
 
   <style>
     .ytWrap{
-  margin-top: 12px;
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 14px 30px rgba(0,0,0,.12);
-  background: rgba(0,0,0,.06);
-}
-.ytWrap iframe{
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border: 0;
-  display:block;
-}
+      margin-top: 12px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 14px 30px rgba(0,0,0,.12);
+      background: rgba(0,0,0,.06);
+    }
+    .ytWrap iframe{
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border: 0;
+      display:block;
+    }
 
     :root{
       --bg:#cfdde8;
@@ -36,18 +36,14 @@
       --serif: ui-serif, "Times New Roman", "Noto Serif JP", serif;
       --sans: ui-sans-serif, system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif;
 
-      /* size */
       --bookW: min(80vw, 1400px);
       --bookH: min(80vh, 900px);
 
-      /* Cover A4 (cap width so it won't cut on mobile) */
       --a4H: min(78vh, 820px);
       --a4W: min(calc(var(--a4H) / 1.414), 92vw);
 
-      /* cover shift (only during opening) */
       --coverShift: -120px;
 
-      /* durations */
       --flipDur: 600ms;
       --coverDur: 480ms;
     }
@@ -84,7 +80,6 @@
       transform-style: preserve-3d;
     }
 
-    /* stronger book shadow */
     .bookRig::before{
       content:"";
       position:absolute;
@@ -100,9 +95,6 @@
       z-index:0;
     }
 
-    /* ======================
-       Cover
-       ====================== */
     .coverStage{
       position:absolute;
       inset:0;
@@ -203,9 +195,6 @@
       pointer-events:none;
     }
 
-    /* ======================
-       Spread
-       ====================== */
     .spreadStage{
       position:absolute;
       inset:0;
@@ -303,15 +292,6 @@
       color: rgba(17,24,39,.80);
     }
 
-    /* inline link */
-    a.inlineLink{
-      color: rgba(16,24,39,.86);
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-    a.inlineLink:hover{ opacity:.85; }
-
-    /* work block */
     .workShot{
       margin-top: 12px;
       display:flex;
@@ -330,7 +310,6 @@
       color: rgba(16,24,39,.60);
     }
 
-    /* click cues */
     .page.right::after{
       content:"";
       position:absolute;
@@ -377,7 +356,6 @@
       pointer-events:none;
     }
 
-    /* Flip layers */
     .flipNext{
       position:absolute;
       top:0;
@@ -457,9 +435,6 @@
       background: transparent;
     }
 
-    /* ======================
-       Mobile
-       ====================== */
     @media (max-width: 760px){
       body{ overflow:auto; }
       .desk{ overflow: visible; }
@@ -485,7 +460,6 @@
 
       .hotRight,.hotLeft{ width: 40%; height: 30%; }
 
-      /* phone only prev cue on single page */
       .spreadWrap[data-can-prev="true"] .page.right::before{
         content:"";
         position:absolute;
@@ -507,7 +481,6 @@
   <div class="desk">
     <div class="bookRig" id="bookRig">
 
-      <!-- Cover -->
       <div class="coverStage">
         <div class="a4Wrap">
           <div class="coverCard">
@@ -518,7 +491,6 @@
         </div>
       </div>
 
-      <!-- Spread -->
       <div class="spreadStage">
         <div class="spreadWrap" id="spreadWrap">
           <div class="spine"></div>
@@ -533,21 +505,18 @@
             <section class="page right" id="cRight"></section>
           </div>
 
-          <!-- Next flip -->
           <div class="shadowNext" id="shadowNext"></div>
           <div class="flipNext" id="flipNext" aria-hidden="true">
             <section class="page right flipFace" id="nextFront"></section>
             <section class="page left  flipFace flipBack" id="nextBack"></section>
           </div>
 
-          <!-- Prev flip -->
           <div class="shadowPrev" id="shadowPrev"></div>
           <div class="flipPrev" id="flipPrev" aria-hidden="true">
             <section class="page left  prevFace" id="prevFront"></section>
             <section class="page right prevFace prevBack" id="prevBack"></section>
           </div>
 
-          <!-- Click zones -->
           <div class="hotRight" id="hotRight" title="next"></div>
           <div class="hotLeft"  id="hotLeft"  title="prev"></div>
         </div>
@@ -574,34 +543,32 @@
         ],
         extraHTML: `
           <div class="workShot">
-            <img src="./assets/img/birdweek_copy.jpg" alt="作品サンプル" loading="lazy">
+            <img src="assets/img/birdweek_copy.jpg" alt="作品サンプル" loading="lazy">
             <div class="workCaption">作品サンプル</div>
           </div>
         `
       },
-     4: {
-  title:"Chapter 4",
-  subtitle:"最近",
-  body:[
-    { html: `動画生成や画像生成にハマっています` },
-
-    { html: `
-      <div class="ytWrap">
-        <iframe
-          src="https://www.youtube.com/embed/kbTz0UgWW4M"
-          title="YouTube video player"
-          loading="lazy"
-          referrerpolicy="strict-origin-when-cross-origin"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowfullscreen>
-        </iframe>
-      </div>
-    `},
-
-    "Thanks for reading!"
-  ]
-},
-
+      4: {
+        title:"Chapter 4",
+        subtitle:"最近",
+        body:[
+          "動画生成や画像生成にハマっています",
+          {
+            html: `
+              <div class="ytWrap">
+                <iframe
+                  src="https://www.youtube-nocookie.com/embed/kbTz0UgWW4M"
+                  title="YouTube video player"
+                  loading="lazy"
+                  referrerpolicy="strict-origin-when-cross-origin"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen></iframe>
+              </div>
+            `
+          },
+          "Thanks for reading!"
+        ]
+      },
     };
 
     const ORDER = Object.keys(PAGES).map(Number).sort((a,b)=>a-b);
@@ -659,14 +626,18 @@
       .replaceAll('"',"&quot;")
       .replaceAll("'","&#39;");
 
-    function bodyItemHTML(item){
-      if (item && typeof item === "object" && "html" in item) return item.html;
-      return esc(String(item)).replaceAll("\n","<br>");
+    function renderBody(items){
+      return (items ?? []).map(item => {
+        if (item && typeof item === "object" && "html" in item) {
+          return item.html; // ★ここはpで包まない
+        }
+        return `<p>${esc(String(item)).replaceAll("\n","<br>")}</p>`;
+      }).join("");
     }
 
     function pageHTML(idx, {showBackMark=false, showNextMark=false} = {}){
       const p = PAGES[idx];
-      const body = (p.body ?? []).map(item => `<p>${bodyItemHTML(item)}</p>`).join("");
+      const body = renderBody(p.body);
       const markRight = showNextMark ? `<div class="flipMark">↘</div>` : "";
       const markLeft  = showBackMark ? `<div class="backMark">↙</div>` : "";
       const extra = p.extraHTML ? `<div style="margin-top:12px;">${p.extraHTML}</div>` : "";

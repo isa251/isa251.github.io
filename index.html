@@ -400,6 +400,10 @@
     .spreadMedia.image-shift .newYearImage{ transform: translateX(0); }
 
     .newYearTextGroup{
+      position:absolute;
+      top:50%;
+      left:50%;
+      transform: translate(-50%, -50%);
       display:flex;
       gap: 24px;
       align-items:center;
@@ -408,6 +412,8 @@
     .newYearText{
       writing-mode: vertical-rl;
       text-orientation: upright;
+      -webkit-writing-mode: vertical-rl;
+      -webkit-text-orientation: upright;
       font-family: var(--serif);
       font-weight: 800;
       font-size: clamp(28px, 3.2vw, 54px);
@@ -941,6 +947,15 @@
         if(!video || !img) return;
 
         video.style.display = "block";
+        wrap.classList.add("show-white");
+        setTimeout(()=>{
+          wrap.classList.remove("show-white");
+          wrap.classList.add("white-out");
+          const play = video.play();
+          if(play && typeof play.catch === "function"){
+            play.catch(()=>{});
+          }
+        }, 1000);
         const onEnd = ()=>{
           wrap.classList.add("show-white");
           setTimeout(()=>{
@@ -954,11 +969,6 @@
           }, 1000);
         };
         video.addEventListener("ended", onEnd, { once: true });
-
-        const play = video.play();
-        if(play && typeof play.catch === "function"){
-          play.catch(()=>{});
-        }
       });
     }
 

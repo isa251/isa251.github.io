@@ -399,15 +399,22 @@
       height:100%;
     }
     .newYearImage{
-      width: min(1024px, 90%);
-      height: min(1024px, 90%);
       object-fit: cover;
       opacity:0;
+      transition: opacity 600ms ease;
+    }
+    .newYearImage.left{
+      width: min(1024px, 90%);
+      height: min(1024px, 90%);
       transform: translateX(40%);
       transition: opacity 600ms ease, transform 1000ms ease;
     }
+    .newYearImage.right{
+      width: min(520px, 68%);
+      height: min(520px, 68%);
+    }
     .spreadMedia.show-image .newYearImage{ opacity:1; }
-    .spreadMedia.image-shift .newYearImage{ transform: translateX(0); }
+    .spreadMedia.image-shift .newYearImage.left{ transform: translateX(0); }
 
     .newYearTextGroup{
       display:flex;
@@ -452,6 +459,21 @@
       transition: opacity 200ms ease;
     }
     .mediaOverlay.pending{ opacity:0; }
+
+    .fireworksOverlay{
+      position:absolute;
+      inset:0;
+      z-index: 1;
+      pointer-events:none;
+      opacity:0.35;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(255,138,128,.6), transparent 40%),
+        radial-gradient(circle at 80% 28%, rgba(255,215,128,.6), transparent 42%),
+        radial-gradient(circle at 50% 18%, rgba(255,255,255,.55), transparent 38%),
+        radial-gradient(circle at 30% 70%, rgba(128,200,255,.55), transparent 45%),
+        radial-gradient(circle at 70% 72%, rgba(255,128,200,.55), transparent 45%);
+      mix-blend-mode: screen;
+    }
 
     .page.right::after{
       content:"";
@@ -621,6 +643,10 @@
         width: min(720px, 84%);
         height: min(720px, 84%);
       }
+      .newYearImage.right{
+        width: min(360px, 70%);
+        height: min(360px, 70%);
+      }
       .newYearText{
         font-size: clamp(22px, 6vw, 40px);
       }
@@ -733,12 +759,14 @@
           <source src="assets/media/new-year-2026.mp4" type="video/mp4">
         </video>
         <div class="whiteFade" aria-hidden="true"></div>
+        <div class="fireworksOverlay" aria-hidden="true"></div>
         <div class="newYearSplit">
           <div class="newYearLeft">
-            <img class="newYearImage" src="assets/media/new-year-2026.png" alt="New year 2026">
+            <img class="newYearImage left" src="assets/media/new-year-2026.png" alt="New year 2026">
           </div>
           <div class="newYearRight">
             <div class="newYearTextGroup" aria-label="2026 謹賀新年">
+              <img class="newYearImage right" src="assets/media/new-year-2026-right.png" alt="New year 2026 right">
               <div class="newYearText">
                 <span style="--d:0s">2</span>
                 <span style="--d:.5s">0</span>

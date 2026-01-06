@@ -381,12 +381,22 @@
       z-index: 3;
       pointer-events:none;
     }
-    .newYearLeft,
-    .newYearRight{
+    .newYearLeft{
       position:relative;
       display:grid;
       place-items:center;
       overflow:hidden;
+      width:100%;
+      height:100%;
+    }
+    .newYearRight{
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      width:100%;
+      height:100%;
     }
     .newYearImage{
       width: min(1024px, 90%);
@@ -400,10 +410,6 @@
     .spreadMedia.image-shift .newYearImage{ transform: translateX(0); }
 
     .newYearTextGroup{
-      position:absolute;
-      top:50%;
-      left:50%;
-      transform: translate(-50%, -50%);
       display:flex;
       gap: 24px;
       align-items:center;
@@ -442,7 +448,10 @@
       inset:0;
       z-index: 6;
       pointer-events:none;
+      opacity:1;
+      transition: opacity 200ms ease;
     }
+    .mediaOverlay.pending{ opacity:0; }
 
     .page.right::after{
       content:"";
@@ -773,6 +782,7 @@
     let mode = "frontCover";
     let cursor = 0;
     let flipping = false;
+    let pendingMedia = false;
 
     const bookRig = document.getElementById("bookRig");
     const openCorner = document.getElementById("openCorner");
@@ -879,10 +889,14 @@
           cRight.innerHTML = "";
           uRight.innerHTML = "";
           mediaOverlay.innerHTML = pageHTML(curPage);
+          pendingMedia = flipping;
+          mediaOverlay.classList.toggle("pending", pendingMedia);
         }else{
           setPage(cRight, curPage, { showBackMark: cursor>0, showNextMark: cursor < TOTAL-1 });
           setPage(uRight, nextPage, { showBackMark: true, showNextMark: true });
           mediaOverlay.innerHTML = "";
+          pendingMedia = false;
+          mediaOverlay.classList.remove("pending");
         }
 
         spreadWrap.classList.toggle("mediaSpread", isMedia);
@@ -907,6 +921,8 @@
           uLeft.innerHTML = "";
           uRight.innerHTML = "";
           spreadWrap.classList.add("mediaSpread");
+          pendingMedia = flipping;
+          mediaOverlay.classList.toggle("pending", pendingMedia);
         }else{
           setPage(cLeft,  leftIdx, { showBackMark: cursor>0, showNextMark:false });
           setPage(cRight, rightIdx, { showBackMark:false, showNextMark:true });
@@ -920,9 +936,21 @@
           }
           mediaOverlay.innerHTML = "";
           spreadWrap.classList.remove("mediaSpread");
+          pendingMedia = false;
+          mediaOverlay.classList.remove("pending");
         }
       }
-      setupNewYearMedia();
+      if(!pendingMedia){
+        setupNewYearMedia();
+      }
+    }
+
+    function onFlipFinish(){
+      if(pendingMedia){
+        mediaOverlay.classList.remove("pending");
+        setupNewYearMedia();
+        pendingMedia = false;
+      }
     }
 
     function setupNewYearMedia(){
@@ -947,25 +975,31 @@
         if(!video || !img) return;
 
         video.style.display = "block";
+        wrap.classList.remove("white-out");
         wrap.classList.add("show-white");
         setTimeout(()=>{
           wrap.classList.remove("show-white");
           wrap.classList.add("white-out");
-          const play = video.play();
-          if(play && typeof play.catch === "function"){
-            play.catch(()=>{});
-          }
+          setTimeout(()=>{
+            const play = video.play();
+            if(play && typeof play.catch === "function"){
+              play.catch(()=>{});
+            }
+          }, 300);
         }, 1000);
         const onEnd = ()=>{
+          wrap.classList.remove("white-out");
           wrap.classList.add("show-white");
           setTimeout(()=>{
             video.style.display = "none";
             wrap.classList.remove("show-white");
             wrap.classList.add("white-out");
-            wrap.classList.add("show-image","show-text");
-            requestAnimationFrame(()=>{
-              wrap.classList.add("image-shift");
-            });
+            setTimeout(()=>{
+              wrap.classList.add("show-image","show-text");
+              requestAnimationFrame(()=>{
+                wrap.classList.add("image-shift");
+              });
+            }, 300);
           }, 1000);
         };
         video.addEventListener("ended", onEnd, { once: true });
@@ -1025,6 +1059,7 @@
         flipNext.classList.remove("active");
         flipNext.style.transform = "rotateY(0deg)";
         flipping = false;
+        onFlipFinish();
       };
 
       let safety = setTimeout(finish, FLIP_DUR + 120);
@@ -1056,6 +1091,7 @@
         flipPrev.classList.remove("active");
         flipPrev.style.transform = "rotateY(0deg)";
         flipping = false;
+        onFlipFinish();
       };
 
       let safety = setTimeout(finish, FLIP_DUR + 120);

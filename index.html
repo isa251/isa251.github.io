@@ -332,8 +332,89 @@
       transition: opacity 600ms ease;
     }
 
-    .page.mediaMode{ padding: 12px; }
-    .page.mediaMode .mediaWrap{ height: 100%; }
+    .page.mediaMode{
+      padding: 0;
+      overflow: visible;
+    }
+    .page.mediaMode::after,
+    .page.mediaMode::before{ display:none; content:none; }
+
+    .spreadMedia{
+      position:absolute;
+      inset:0;
+      width:200%;
+      left:-100%;
+      height:100%;
+      border-radius: 14px;
+      overflow:hidden;
+      box-shadow: 0 14px 30px rgba(0,0,0,.12);
+      background: rgba(0,0,0,.06);
+    }
+    .spreadMedia video,
+    .spreadMedia img{
+      width: 100%;
+      height: 100%;
+      display:block;
+      object-fit: cover;
+    }
+
+    .whiteFade{
+      position:absolute;
+      inset:0;
+      background:#fff;
+      opacity:0;
+      transition: opacity 1000ms ease;
+      pointer-events:none;
+    }
+    .spreadMedia.show-white .whiteFade{ opacity:1; }
+    .spreadMedia.white-out .whiteFade{
+      opacity:0;
+      transition-duration: 300ms;
+    }
+
+    .newYearImage{
+      position:absolute;
+      top:50%;
+      left:50%;
+      transform: translate(-50%, -50%);
+      width: 45%;
+      height: auto;
+      max-height: 90%;
+      opacity:0;
+      transition: opacity 600ms ease, left 1000ms ease;
+    }
+    .spreadMedia.show-image .newYearImage{ opacity:1; }
+    .spreadMedia.image-shift .newYearImage{ left:25%; }
+
+    .newYearText{
+      position:absolute;
+      top:50%;
+      right:12%;
+      transform: translateY(-50%);
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      font-family: var(--serif);
+      font-weight: 800;
+      font-size: clamp(28px, 3.2vw, 54px);
+      letter-spacing: .18em;
+      color: rgba(16,24,39,.88);
+    }
+    .newYearText span{
+      opacity:0;
+      animation: charIn 0.4s ease forwards;
+      animation-delay: var(--d);
+    }
+    .spreadMedia:not(.show-text) .newYearText span{
+      animation: none;
+      opacity:0;
+    }
+
+    @keyframes charIn{
+      from{ opacity:0; transform: translateY(8px); }
+      to{ opacity:1; transform: translateY(0); }
+    }
+
+    .spreadWrap.mediaSpread .spine{ display:none; }
 
     .page.right::after{
       content:"";
@@ -498,6 +579,18 @@
         opacity:.85;
         pointer-events:none;
       }
+
+      .spreadMedia{
+        width:100%;
+        left:0;
+      }
+      .newYearImage{
+        width: 70%;
+      }
+      .newYearText{
+        right: 6%;
+        font-size: clamp(22px, 6vw, 40px);
+      }
     }
   </style>
 </head>
@@ -601,11 +694,22 @@
     layout:"media",
     body:[],
     extraHTML: `
-      <div class="mediaWrap" data-media-page="newyear">
-        <video muted playsinline preload="auto">
-          <source src="assets/media/new-year-2026.mov" type="video/quicktime">
+      <div class="spreadMedia" data-media-page="newyear">
+        <video muted playsinline preload="auto" autoplay>
+          <source src="assets/media/new-year-2026.mp4" type="video/mp4">
         </video>
-        <img src="assets/media/new-year-2026.png" alt="New year 2026">
+        <div class="whiteFade" aria-hidden="true"></div>
+        <img class="newYearImage" src="assets/media/new-year-2026.png" alt="New year 2026">
+        <div class="newYearText" aria-label="2026 謹賀新年">
+          <span style="--d:0s">2</span>
+          <span style="--d:.5s">0</span>
+          <span style="--d:1s">2</span>
+          <span style="--d:1.5s">6</span>
+          <span style="--d:2s">謹</span>
+          <span style="--d:2.5s">賀</span>
+          <span style="--d:3s">新</span>
+          <span style="--d:3.5s">年</span>
+        </div>
       </div>
     `
   },
@@ -731,35 +835,57 @@
         setPage(cRight, curPage, { showBackMark: cursor>0, showNextMark: cursor < TOTAL-1 });
         setPage(uRight, nextPage, { showBackMark: true, showNextMark: true });
 
+        spreadWrap.classList.toggle("mediaSpread", PAGES[curPage]?.layout === "media");
         updateMobileCues();
       }else{
         const cur = SPREADS[cursor];
         const under = SPREADS[cursor+1] ?? null;
 
-        setPage(cLeft,  cur[0], { showBackMark: cursor>0, showNextMark:false });
-        setPage(cRight, cur[1], { showBackMark:false, showNextMark:true });
+        const leftIdx = cur[0];
+        const rightIdx = cur[1];
+        const leftPage = PAGES[leftIdx];
+        const rightPage = PAGES[rightIdx];
+        const mediaIdx = (leftPage?.layout === "media")
+          ? leftIdx
+          : (rightPage?.layout === "media" ? rightIdx : null);
 
-        if(under){
-          setPage(uLeft,  under[0], { showBackMark:true, showNextMark:false });
-          setPage(uRight, under[1], { showBackMark:false, showNextMark:true });
-        }else{
+        if(mediaIdx){
+          cLeft.innerHTML = "";
+          cLeft.classList.remove("mediaMode");
+          setPage(cRight, mediaIdx, { showBackMark:false, showNextMark:true });
           uLeft.innerHTML = "";
           uRight.innerHTML = "";
+          spreadWrap.classList.add("mediaSpread");
+        }else{
+          setPage(cLeft,  leftIdx, { showBackMark: cursor>0, showNextMark:false });
+          setPage(cRight, rightIdx, { showBackMark:false, showNextMark:true });
+
+          if(under){
+            setPage(uLeft,  under[0], { showBackMark:true, showNextMark:false });
+            setPage(uRight, under[1], { showBackMark:false, showNextMark:true });
+          }else{
+            uLeft.innerHTML = "";
+            uRight.innerHTML = "";
+          }
+          spreadWrap.classList.remove("mediaSpread");
         }
       }
       setupNewYearMedia();
     }
 
     function setupNewYearMedia(){
+      const allWraps = document.querySelectorAll('[data-media-page="newyear"]');
       const allVideos = document.querySelectorAll('[data-media-page="newyear"] video');
-      const allImages = document.querySelectorAll('[data-media-page="newyear"] img');
       allVideos.forEach((video)=>{
         video.pause();
         video.currentTime = 0;
       });
-      allImages.forEach((img)=>{
-        img.style.display = "none";
-        img.style.opacity = "0";
+      allWraps.forEach((wrap)=>{
+        wrap.classList.remove("show-white","show-image","image-shift","show-text","white-out");
+        const img = wrap.querySelector("img");
+        if(img){
+          img.style.opacity = "0";
+        }
       });
 
       const currentWraps = document.querySelectorAll('.spread.current [data-media-page="newyear"]');
@@ -770,11 +896,16 @@
 
         video.style.display = "block";
         const onEnd = ()=>{
-          video.style.display = "none";
-          img.style.display = "block";
-          requestAnimationFrame(()=>{
-            img.style.opacity = "1";
-          });
+          wrap.classList.add("show-white");
+          setTimeout(()=>{
+            video.style.display = "none";
+            wrap.classList.remove("show-white");
+            wrap.classList.add("white-out");
+            wrap.classList.add("show-image","show-text");
+            requestAnimationFrame(()=>{
+              if(!isMobile()) wrap.classList.add("image-shift");
+            });
+          }, 1000);
         };
         video.addEventListener("ended", onEnd, { once: true });
 

@@ -347,6 +347,7 @@
       height:100%;
       border-radius: 14px;
       overflow:hidden;
+      z-index: 6;
       box-shadow: 0 14px 30px rgba(0,0,0,.12);
       background: rgba(0,0,0,.06);
     }
@@ -365,6 +366,7 @@
       opacity:0;
       transition: opacity 1000ms ease;
       pointer-events:none;
+      z-index: 2;
     }
     .spreadMedia.show-white .whiteFade{ opacity:1; }
     .spreadMedia.white-out .whiteFade{
@@ -382,6 +384,7 @@
       max-height: 90%;
       opacity:0;
       transition: opacity 600ms ease, left 1000ms ease;
+      z-index: 3;
     }
     .spreadMedia.show-image .newYearImage{ opacity:1; }
     .spreadMedia.image-shift .newYearImage{ left:25%; }
@@ -389,7 +392,6 @@
     .newYearText{
       position:absolute;
       top:50%;
-      right:12%;
       transform: translateY(-50%);
       writing-mode: vertical-rl;
       text-orientation: upright;
@@ -397,8 +399,11 @@
       font-weight: 800;
       font-size: clamp(28px, 3.2vw, 54px);
       letter-spacing: .18em;
-      color: rgba(16,24,39,.88);
+      color: #b30018;
+      z-index: 4;
     }
+    .newYearText.left{ left:12%; }
+    .newYearText.right{ right:12%; }
     .newYearText span{
       opacity:0;
       animation: charIn 0.4s ease forwards;
@@ -410,8 +415,8 @@
     }
 
     @keyframes charIn{
-      from{ opacity:0; transform: translateY(8px); }
-      to{ opacity:1; transform: translateY(0); }
+      from{ opacity:0; }
+      to{ opacity:1; }
     }
 
     .spreadWrap.mediaSpread .spine{ display:none; }
@@ -591,6 +596,7 @@
         right: 6%;
         font-size: clamp(22px, 6vw, 40px);
       }
+      .newYearText.left{ left:6%; }
     }
   </style>
 </head>
@@ -700,11 +706,13 @@
         </video>
         <div class="whiteFade" aria-hidden="true"></div>
         <img class="newYearImage" src="assets/media/new-year-2026.png" alt="New year 2026">
-        <div class="newYearText" aria-label="2026 謹賀新年">
+        <div class="newYearText left" aria-label="2026">
           <span style="--d:0s">2</span>
           <span style="--d:.5s">0</span>
           <span style="--d:1s">2</span>
           <span style="--d:1.5s">6</span>
+        </div>
+        <div class="newYearText right" aria-label="謹賀新年">
           <span style="--d:2s">謹</span>
           <span style="--d:2.5s">賀</span>
           <span style="--d:3s">新</span>
@@ -884,7 +892,7 @@
         wrap.classList.remove("show-white","show-image","image-shift","show-text","white-out");
         const img = wrap.querySelector("img");
         if(img){
-          img.style.opacity = "0";
+          img.style.opacity = "";
         }
       });
 

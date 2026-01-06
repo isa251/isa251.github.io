@@ -386,20 +386,26 @@
       position:relative;
       display:grid;
       place-items:center;
+      overflow:hidden;
     }
     .newYearImage{
       width: min(1024px, 90%);
       height: min(1024px, 90%);
       object-fit: cover;
       opacity:0;
-      transition: opacity 600ms ease;
+      transform: translateX(40%);
+      transition: opacity 600ms ease, transform 1000ms ease;
     }
     .spreadMedia.show-image .newYearImage{ opacity:1; }
+    .spreadMedia.image-shift .newYearImage{ transform: translateX(0); }
 
+    .newYearTextGroup{
+      display:flex;
+      gap: 24px;
+      align-items:center;
+      justify-content:center;
+    }
     .newYearText{
-      position:absolute;
-      top:50%;
-      transform: translateY(-50%);
       writing-mode: vertical-rl;
       text-orientation: upright;
       font-family: var(--serif);
@@ -409,7 +415,6 @@
       color: #b30018;
       z-index: 4;
     }
-    .newYearText.right{ right:12%; }
     .newYearText span{
       opacity:0;
       animation: charIn 0.4s ease forwards;
@@ -602,7 +607,6 @@
         height: min(720px, 84%);
       }
       .newYearText{
-        right: 6%;
         font-size: clamp(22px, 6vw, 40px);
       }
     }
@@ -719,15 +723,19 @@
             <img class="newYearImage" src="assets/media/new-year-2026.png" alt="New year 2026">
           </div>
           <div class="newYearRight">
-            <div class="newYearText right" aria-label="2026 謹賀新年">
-              <span style="--d:0s">2</span>
-              <span style="--d:.5s">0</span>
-              <span style="--d:1s">2</span>
-              <span style="--d:1.5s">6</span>
-              <span style="--d:2s">謹</span>
-              <span style="--d:2.5s">賀</span>
-              <span style="--d:3s">新</span>
-              <span style="--d:3.5s">年</span>
+            <div class="newYearTextGroup" aria-label="2026 謹賀新年">
+              <div class="newYearText">
+                <span style="--d:0s">2</span>
+                <span style="--d:.5s">0</span>
+                <span style="--d:1s">2</span>
+                <span style="--d:1.5s">6</span>
+              </div>
+              <div class="newYearText">
+                <span style="--d:2s">謹</span>
+                <span style="--d:2.5s">賀</span>
+                <span style="--d:3s">新</span>
+                <span style="--d:3.5s">年</span>
+              </div>
             </div>
           </div>
         </div>
@@ -838,6 +846,12 @@
       el.innerHTML = pageHTML(idx, opts);
     }
 
+    function pageHTMLForFlip(idx, opts){
+      const p = PAGES[idx];
+      if(p?.layout === "media") return "";
+      return pageHTML(idx, opts);
+    }
+
     function updateMobileCues(){
       if(isMobile()){
         spreadWrap.dataset.canPrev = String(cursor > 0);
@@ -913,7 +927,7 @@
         video.currentTime = 0;
       });
       allWraps.forEach((wrap)=>{
-        wrap.classList.remove("show-white","show-image","show-text","white-out");
+        wrap.classList.remove("show-white","show-image","show-text","white-out","image-shift");
         const img = wrap.querySelector("img");
         if(img){
           img.style.opacity = "";
@@ -934,6 +948,9 @@
             wrap.classList.remove("show-white");
             wrap.classList.add("white-out");
             wrap.classList.add("show-image","show-text");
+            requestAnimationFrame(()=>{
+              wrap.classList.add("image-shift");
+            });
           }, 1000);
         };
         video.addEventListener("ended", onEnd, { once: true });
@@ -1055,8 +1072,8 @@
         const nxtPage = ORDER[cursor+1];
 
         startNextFlip(
-          pageHTML(curPage, { showBackMark: cursor>0, showNextMark:true }),
-          pageHTML(nxtPage, { showBackMark:true, showNextMark: (cursor+1) < TOTAL-1 }),
+          pageHTMLForFlip(curPage, { showBackMark: cursor>0, showNextMark:true }),
+          pageHTMLForFlip(nxtPage, { showBackMark:true, showNextMark: (cursor+1) < TOTAL-1 }),
           () => { cursor++; renderCurrent(); }
         );
         return;
@@ -1072,8 +1089,8 @@
       const nxt = SPREADS[cursor+1];
 
       startNextFlip(
-        pageHTML(cur[1], { showBackMark:false, showNextMark:true }),
-        pageHTML(nxt[0], { showBackMark:true, showNextMark:false }),
+        pageHTMLForFlip(cur[1], { showBackMark:false, showNextMark:true }),
+        pageHTMLForFlip(nxt[0], { showBackMark:true, showNextMark:false }),
         () => { cursor++; renderCurrent(); }
       );
     }
@@ -1092,8 +1109,8 @@
         const prvPage = ORDER[cursor-1];
 
         startPrevFlip(
-          pageHTML(curPage, { showBackMark:true, showNextMark: cursor < TOTAL-1 }),
-          pageHTML(prvPage, { showBackMark: (cursor-1)>0, showNextMark:true }),
+          pageHTMLForFlip(curPage, { showBackMark:true, showNextMark: cursor < TOTAL-1 }),
+          pageHTMLForFlip(prvPage, { showBackMark: (cursor-1)>0, showNextMark:true }),
           () => { cursor--; renderCurrent(); }
         );
         return;
@@ -1109,8 +1126,8 @@
       const prv = SPREADS[cursor-1];
 
       startPrevFlip(
-        pageHTML(cur[0], { showBackMark:true, showNextMark:false }),
-        pageHTML(prv[1], { showBackMark:false, showNextMark:true }),
+        pageHTMLForFlip(cur[0], { showBackMark:true, showNextMark:false }),
+        pageHTMLForFlip(prv[1], { showBackMark:false, showNextMark:true }),
         () => { cursor--; renderCurrent(); }
       );
     }

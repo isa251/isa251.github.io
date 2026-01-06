@@ -311,6 +311,30 @@
       color: rgba(16,24,39,.60);
     }
 
+    .mediaWrap{
+      width: 100%;
+      height: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 14px 30px rgba(0,0,0,.12);
+      background: rgba(0,0,0,.06);
+    }
+    .mediaWrap video,
+    .mediaWrap img{
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+    .mediaWrap img{
+      display:none;
+      opacity: 0;
+      transition: opacity 600ms ease;
+    }
+
+    .page.mediaMode{ padding: 12px; }
+    .page.mediaMode .mediaWrap{ height: 100%; }
+
     .page.right::after{
       content:"";
       position:absolute;
@@ -574,10 +598,16 @@
       5: {
     title:"new year 2026",
     subtitle:"new year 2026",
-    body:[
-      "年賀状",
-      "Coming Soon"
-    ]
+    layout:"media",
+    body:[],
+    extraHTML: `
+      <div class="mediaWrap" data-media-page="newyear">
+        <video muted playsinline preload="auto">
+          <source src="assets/media/new-year-2026.mov" type="video/quicktime">
+        </video>
+        <img src="assets/media/new-year-2026.png" alt="New year 2026">
+      </div>
+    `
   },
 
   6: {
@@ -656,6 +686,9 @@
 
     function pageHTML(idx, {showBackMark=false, showNextMark=false} = {}){
       const p = PAGES[idx];
+      if(p.layout === "media"){
+        return p.extraHTML ?? "";
+      }
       const body = renderBody(p.body);
       const markRight = showNextMark ? `<div class="flipMark">↘</div>` : "";
       const markLeft  = showBackMark ? `<div class="backMark">↙</div>` : "";
@@ -673,7 +706,9 @@
     }
 
     function setPage(el, idx, opts){
-      if(!idx){ el.innerHTML = ""; return; }
+      if(!idx){ el.innerHTML = ""; el.classList.remove("mediaMode"); return; }
+      const p = PAGES[idx];
+      el.classList.toggle("mediaMode", p.layout === "media");
       el.innerHTML = pageHTML(idx, opts);
     }
 
@@ -712,6 +747,42 @@
           uRight.innerHTML = "";
         }
       }
+      setupNewYearMedia();
+    }
+
+    function setupNewYearMedia(){
+      const allVideos = document.querySelectorAll('[data-media-page="newyear"] video');
+      const allImages = document.querySelectorAll('[data-media-page="newyear"] img');
+      allVideos.forEach((video)=>{
+        video.pause();
+        video.currentTime = 0;
+      });
+      allImages.forEach((img)=>{
+        img.style.display = "none";
+        img.style.opacity = "0";
+      });
+
+      const currentWraps = document.querySelectorAll('.spread.current [data-media-page="newyear"]');
+      currentWraps.forEach((wrap)=>{
+        const video = wrap.querySelector("video");
+        const img = wrap.querySelector("img");
+        if(!video || !img) return;
+
+        video.style.display = "block";
+        const onEnd = ()=>{
+          video.style.display = "none";
+          img.style.display = "block";
+          requestAnimationFrame(()=>{
+            img.style.opacity = "1";
+          });
+        };
+        video.addEventListener("ended", onEnd, { once: true });
+
+        const play = video.play();
+        if(play && typeof play.catch === "function"){
+          play.catch(()=>{});
+        }
+      });
     }
 
     function showFrontCover(){

@@ -351,6 +351,9 @@
       box-shadow: 0 14px 30px rgba(0,0,0,.12);
       background: rgba(0,0,0,.06);
     }
+    .spreadMedia.show-image{
+      background: linear-gradient(180deg, rgba(255,235,200,.5) 0%, rgba(255,224,236,.85) 30%, rgba(255,238,244,.8) 60%, rgba(255,250,252,.92) 100%);
+    }
     .spreadMedia video{
       width: 100%;
       height: 100%;
@@ -415,7 +418,11 @@
       transform: translateX(40%);
       transition: opacity 600ms ease, transform 1000ms ease;
     }
-    .newYearImage.alt{ opacity:0; }
+    .newYearImage.alt{
+      opacity:0;
+      object-fit: contain;
+      object-position: center top;
+    }
     .newYearImage.right{
 
       width: clamp(220px, 34vw, 440px);
@@ -470,32 +477,13 @@
       pointer-events:none;
     }
 
-    .fxLayer{
+    .fireworkCanvas{
       position:absolute;
       inset:0;
+      width:100%;
+      height:100%;
       pointer-events:none;
       z-index: 5;
-      overflow:hidden;
-    }
-    .fireworkParticle{
-      position:absolute;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      transform: translate(-50%,-50%);
-      opacity: 0.95;
-      animation: fireworkBurst 900ms ease-out forwards;
-      will-change: transform, opacity;
-    }
-    @keyframes fireworkBurst{
-      from{
-        transform: translate(-50%,-50%) scale(1);
-        opacity: 1;
-      }
-      to{
-        transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.35);
-        opacity: 0;
-      }
     }
 
     .page.right::after{
@@ -754,7 +742,7 @@
             html: `
               <div class="ytWrap">
                 <iframe
-                  src="https://www.youtube-nocookie.com/embed/kbTz0UgWW4M"
+                  src="https://www.youtube.com/embed/kbTz0UgWW4M"
                   title="YouTube video player"
                   loading="lazy"
                   referrerpolicy="strict-origin-when-cross-origin"
@@ -788,6 +776,7 @@
             </button>
           </div>
           <div class="newYearRight">
+            <canvas class="fireworkCanvas" aria-hidden="true"></canvas>
             <div class="newYearTextGroup" aria-label="2026 謹賀新年">
               <div class="newYearText">
                 <span style="--d:0s">2</span>
@@ -997,6 +986,18 @@
           clearInterval(wrap._fxInterval);
           wrap._fxInterval = null;
         }
+        if(wrap._swapInterval){
+          clearInterval(wrap._swapInterval);
+          wrap._swapInterval = null;
+        }
+        if(wrap._fxRaf){
+          cancelAnimationFrame(wrap._fxRaf);
+          wrap._fxRaf = null;
+        }
+        if(wrap._fxResize){
+          window.removeEventListener("resize", wrap._fxResize);
+          wrap._fxResize = null;
+        }
         delete wrap.dataset.fxPlayed;
         const imgs = wrap.querySelectorAll("img");
         imgs.forEach((img)=>{ img.style.opacity = ""; });
@@ -1004,9 +1005,10 @@
         if(toggle){
           toggle.setAttribute("aria-pressed","false");
         }
-        const fx = wrap.querySelector(".fxLayer");
-        if(fx){
-          fx.innerHTML = "";
+        const canvas = wrap.querySelector(".fireworkCanvas");
+        if(canvas){
+          const ctx = canvas.getContext("2d");
+          ctx?.clearRect(0,0,canvas.width,canvas.height);
         }
       });
 
@@ -1025,8 +1027,6 @@
           });
         }
 
-        startNewYearFireworks(wrap);
-
         video.style.display = "block";
         const onEnd = ()=>{
           wrap.classList.add("show-white");
@@ -1038,6 +1038,8 @@
             requestAnimationFrame(()=>{
               wrap.classList.add("image-shift");
             });
+            setTimeout(()=>{ startNewYearFireworks(wrap); }, 200);
+            startNewYearAutoSwap(wrap);
           }, 1000);
         };
         video.addEventListener("ended", onEnd, { once: true });
@@ -1219,60 +1221,128 @@
       );
     }
 
-    const FIREWORK_COLORS = ["#ff6b6b", "#ffd93d", "#6bcBef", "#a0e426", "#f48bff", "#ff9f43"];
+    const FIREWORK_COLORS = ["255,45,45", "255,77,109", "255,107,107", "255,123,123", "255,154,154"];
 
-    function ensureFxLayer(parentEl){
-      if(!parentEl) return null;
-      let layer = parentEl.querySelector(".fxLayer");
-      if(!layer){
-        layer = document.createElement("div");
-        layer.className = "fxLayer";
-        parentEl.appendChild(layer);
-      }
-      return layer;
+    function startNewYearAutoSwap(wrap){
+      if(!wrap || wrap._swapInterval) return;
+      const toggle = wrap.querySelector(".newYearToggle");
+      wrap._swapInterval = setInterval(()=>{
+        wrap.classList.toggle("show-alt");
+        if(toggle){
+          toggle.setAttribute("aria-pressed", String(wrap.classList.contains("show-alt")));
+        }
+      }, 5000);
     }
 
-    function spawnFireworkInLayer(layer, x, y){
-      if(!layer) return;
-      const count = 18;
-      for(let i=0;i<count;i++){
-        const dot = document.createElement("span");
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 40 + Math.random() * 90;
-        const dx = Math.cos(angle) * dist;
-        const dy = Math.sin(angle) * dist;
-        dot.className = "fireworkParticle";
-        dot.style.left = `${x}px`;
-        dot.style.top = `${y}px`;
-        dot.style.setProperty("--dx", `${dx}px`);
-        dot.style.setProperty("--dy", `${dy}px`);
-        dot.style.background = FIREWORK_COLORS[i % FIREWORK_COLORS.length];
-        dot.style.animationDuration = `${700 + Math.random() * 400}ms`;
-        layer.appendChild(dot);
-        dot.addEventListener("animationend", ()=> dot.remove(), { once:true });
+    function setupCanvas(canvas, host){
+      const rect = host.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      const ctx = canvas.getContext("2d");
+      if(ctx){
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
+      return ctx;
     }
 
     function startNewYearFireworks(wrap){
       if(!wrap || wrap.dataset.fxPlayed === "true") return;
       wrap.dataset.fxPlayed = "true";
       const rightPane = wrap.querySelector(".newYearRight");
-      const layer = ensureFxLayer(rightPane);
-      if(!layer) return;
-      const durationMs = 5000;
-      const start = Date.now();
-      const interval = setInterval(()=>{
-        if(Date.now() - start > durationMs){
-          clearInterval(interval);
-          wrap._fxInterval = null;
+      const canvas = wrap.querySelector(".fireworkCanvas");
+      if(!rightPane || !canvas) return;
+      const ctx = setupCanvas(canvas, rightPane);
+      if(!ctx) return;
+      const particles = [];
+      const durationMs = 10000;
+      const startTime = performance.now();
+      const spawnInterval = 360;
+      const maxParticles = 260;
+      let lastSpawn = startTime;
+      let lastFrame = startTime;
+
+      const spawnBurst = ()=>{
+        const w = canvas.width / Math.min(window.devicePixelRatio || 1, 1.25);
+        const h = canvas.height / Math.min(window.devicePixelRatio || 1, 1.25);
+        const cx = w * (0.18 + Math.random() * 0.64);
+        const cy = h * (0.18 + Math.random() * 0.58);
+        const count = 24 + Math.floor(Math.random() * 10);
+        for(let i=0;i<count;i++){
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 3.2 + Math.random() * 5.6;
+          const life = 32 + Math.random() * 18;
+          particles.push({
+            x: cx,
+            y: cy,
+            px: cx,
+            py: cy,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life,
+            maxLife: life,
+            width: 1.4 + Math.random() * 1.6,
+            color: FIREWORK_COLORS[i % FIREWORK_COLORS.length]
+          });
+        }
+      };
+
+      const resize = ()=>{
+        setupCanvas(canvas, rightPane);
+      };
+      wrap._fxResize = resize;
+      window.addEventListener("resize", resize);
+
+      const tick = (now)=>{
+        if(now - lastFrame < 33){
+          wrap._fxRaf = requestAnimationFrame(tick);
           return;
         }
-        const rect = layer.getBoundingClientRect();
-        const x = Math.random() * rect.width;
-        const y = rect.height * 0.15 + Math.random() * rect.height * 0.7;
-        spawnFireworkInLayer(layer, x, y);
-      }, 220);
-      wrap._fxInterval = interval;
+        lastFrame = now;
+
+        if(now - startTime > durationMs && particles.length === 0){
+          wrap._fxRaf = null;
+          return;
+        }
+
+        if(now - lastSpawn > spawnInterval && now - startTime < durationMs){
+          lastSpawn = now;
+          spawnBurst();
+        }
+
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.globalCompositeOperation = "lighter";
+        ctx.lineCap = "round";
+        ctx.shadowBlur = 1.4;
+        if(particles.length > maxParticles){
+          particles.splice(0, particles.length - maxParticles);
+        }
+        for(let i=particles.length - 1; i>=0; i--){
+          const p = particles[i];
+          p.px = p.x;
+          p.py = p.y;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.02;
+          p.life -= 1;
+          if(p.life <= 0){
+            particles.splice(i, 1);
+            continue;
+          }
+          const alpha = Math.max(0, p.life / p.maxLife);
+          ctx.strokeStyle = `rgba(${p.color},${alpha})`;
+          ctx.shadowColor = `rgba(${p.color},${alpha * 0.4})`;
+          ctx.lineWidth = p.width;
+          ctx.beginPath();
+          ctx.moveTo(p.px, p.py);
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+        }
+        wrap._fxRaf = requestAnimationFrame(tick);
+      };
+      wrap._fxRaf = requestAnimationFrame(tick);
     }
 
     function syncCursorOnResize(){

@@ -783,7 +783,7 @@
             <button class="newYearToggle" type="button" aria-label="画像を切り替える" aria-pressed="false">
               <span class="newYearImageStack">
                 <img class="newYearImage main" src="assets/media/new-year-2026.png" alt="New year 2026">
-                <img class="newYearImage alt" src="assets/media/ChatGPT Image Jan 7, 2026, 01_56_50 AM.png" alt="ChatGPT Image Jan 7, 2026">
+                <img class="newYearImage alt" src="assets/media/chatgpt-2026.png" alt="ChatGPT Image Jan 7, 2026">
               </span>
             </button>
           </div>
@@ -993,11 +993,20 @@
       });
       allWraps.forEach((wrap)=>{
         wrap.classList.remove("show-white","show-image","show-text","white-out","image-shift","show-alt");
+        if(wrap._fxInterval){
+          clearInterval(wrap._fxInterval);
+          wrap._fxInterval = null;
+        }
+        delete wrap.dataset.fxPlayed;
         const imgs = wrap.querySelectorAll("img");
         imgs.forEach((img)=>{ img.style.opacity = ""; });
         const toggle = wrap.querySelector(".newYearToggle");
         if(toggle){
           toggle.setAttribute("aria-pressed","false");
+        }
+        const fx = wrap.querySelector(".fxLayer");
+        if(fx){
+          fx.innerHTML = "";
         }
       });
 
@@ -1015,6 +1024,8 @@
             toggle.setAttribute("aria-pressed", String(wrap.classList.contains("show-alt")));
           });
         }
+
+        startNewYearFireworks(wrap);
 
         video.style.display = "block";
         const onEnd = ()=>{
@@ -1210,19 +1221,18 @@
 
     const FIREWORK_COLORS = ["#ff6b6b", "#ffd93d", "#6bcBef", "#a0e426", "#f48bff", "#ff9f43"];
 
-    function ensureFxLayer(pageEl){
-      if(!pageEl) return null;
-      let layer = pageEl.querySelector(".fxLayer");
+    function ensureFxLayer(parentEl){
+      if(!parentEl) return null;
+      let layer = parentEl.querySelector(".fxLayer");
       if(!layer){
         layer = document.createElement("div");
         layer.className = "fxLayer";
-        pageEl.appendChild(layer);
+        parentEl.appendChild(layer);
       }
       return layer;
     }
 
-    function spawnFirework(pageEl, x, y){
-      const layer = ensureFxLayer(pageEl);
+    function spawnFireworkInLayer(layer, x, y){
       if(!layer) return;
       const count = 18;
       for(let i=0;i<count;i++){
@@ -1243,16 +1253,26 @@
       }
     }
 
-    function canSpawnFirework(){
-      return mode === "open" && !spreadWrap.classList.contains("mediaSpread");
-    }
-
-    function spawnFireworkFromEvent(e, pageEl){
-      if(!pageEl) return;
-      const rect = pageEl.getBoundingClientRect();
-      const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width);
-      const y = Math.min(Math.max(0, e.clientY - rect.top), rect.height);
-      spawnFirework(pageEl, x, y);
+    function startNewYearFireworks(wrap){
+      if(!wrap || wrap.dataset.fxPlayed === "true") return;
+      wrap.dataset.fxPlayed = "true";
+      const rightPane = wrap.querySelector(".newYearRight");
+      const layer = ensureFxLayer(rightPane);
+      if(!layer) return;
+      const durationMs = 5000;
+      const start = Date.now();
+      const interval = setInterval(()=>{
+        if(Date.now() - start > durationMs){
+          clearInterval(interval);
+          wrap._fxInterval = null;
+          return;
+        }
+        const rect = layer.getBoundingClientRect();
+        const x = Math.random() * rect.width;
+        const y = rect.height * 0.15 + Math.random() * rect.height * 0.7;
+        spawnFireworkInLayer(layer, x, y);
+      }, 220);
+      wrap._fxInterval = interval;
     }
 
     function syncCursorOnResize(){
@@ -1273,13 +1293,7 @@
 
     openCorner.addEventListener("click", openBook);
 
-    cRight.addEventListener("click", (e)=>{
-      if(!canSpawnFirework()) return;
-      spawnFireworkFromEvent(e, cRight);
-    });
-
-    hotRight.addEventListener("click", (e)=>{
-      if(canSpawnFirework()) spawnFireworkFromEvent(e, cRight);
+    hotRight.addEventListener("click", ()=>{
       if (mode === "frontCover") openBook();
       else next();
     });

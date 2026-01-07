@@ -379,7 +379,7 @@
       display:grid;
       grid-template-columns: 1fr 1fr;
       z-index: 3;
-      pointer-events:none;
+      pointer-events:auto;
     }
     .newYearLeft,
     .newYearRight{
@@ -388,17 +388,34 @@
       place-items:center;
       overflow:hidden;
     }
-    .newYearImage{
-      object-fit: cover;
-      opacity:0;
-      transition: opacity 600ms ease;
+    .newYearLeft{ pointer-events:auto; }
+    .newYearRight{ pointer-events:none; }
+    .newYearToggle{
+      width: 100%;
+      height: 100%;
+      display:grid;
+      place-items:center;
+      padding:0;
+      border:0;
+      background: transparent;
+      cursor:pointer;
     }
-    .newYearImage.left{
+    .newYearImageStack{
+      position:relative;
       width: min(1024px, 90%);
       height: min(1024px, 90%);
+    }
+    .newYearImage{
+      position:absolute;
+      inset:0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity:0;
       transform: translateX(40%);
       transition: opacity 600ms ease, transform 1000ms ease;
     }
+    .newYearImage.alt{ opacity:0; }
     .newYearImage.right{
 
       width: clamp(220px, 34vw, 440px);
@@ -409,8 +426,10 @@
 
 
     }
-    .spreadMedia.show-image .newYearImage{ opacity:1; }
-    .spreadMedia.image-shift .newYearImage.left{ transform: translateX(0); }
+    .spreadMedia.show-image .newYearImage.main{ opacity:1; }
+    .spreadMedia.show-image.show-alt .newYearImage.main{ opacity:0; }
+    .spreadMedia.show-image.show-alt .newYearImage.alt{ opacity:1; }
+    .spreadMedia.image-shift .newYearImage{ transform: translateX(0); }
 
     .newYearTextGroup{
       display:flex;
@@ -451,19 +470,32 @@
       pointer-events:none;
     }
 
-    .fireworksOverlay{
+    .fxLayer{
       position:absolute;
       inset:0;
-      z-index: 1;
       pointer-events:none;
-      opacity:0.35;
-      background:
-        radial-gradient(circle at 20% 30%, rgba(255,138,128,.6), transparent 40%),
-        radial-gradient(circle at 80% 28%, rgba(255,215,128,.6), transparent 42%),
-        radial-gradient(circle at 50% 18%, rgba(255,255,255,.55), transparent 38%),
-        radial-gradient(circle at 30% 70%, rgba(128,200,255,.55), transparent 45%),
-        radial-gradient(circle at 70% 72%, rgba(255,128,200,.55), transparent 45%);
-      mix-blend-mode: screen;
+      z-index: 5;
+      overflow:hidden;
+    }
+    .fireworkParticle{
+      position:absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      transform: translate(-50%,-50%);
+      opacity: 0.95;
+      animation: fireworkBurst 900ms ease-out forwards;
+      will-change: transform, opacity;
+    }
+    @keyframes fireworkBurst{
+      from{
+        transform: translate(-50%,-50%) scale(1);
+        opacity: 1;
+      }
+      to{
+        transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.35);
+        opacity: 0;
+      }
     }
 
     .page.right::after{
@@ -630,13 +662,9 @@
         pointer-events:none;
       }
 
-      .newYearImage{
+      .newYearImageStack{
         width: min(720px, 84%);
         height: min(720px, 84%);
-      }
-      .newYearImage.right{
-        width: min(360px, 70%);
-        height: min(360px, 70%);
       }
       .newYearText{
         font-size: clamp(22px, 6vw, 40px);
@@ -750,14 +778,17 @@
           <source src="assets/media/new-year-2026.mp4" type="video/mp4">
         </video>
         <div class="whiteFade" aria-hidden="true"></div>
-        <div class="fireworksOverlay" aria-hidden="true"></div>
-        <div class="newYearSplit">
+          <div class="newYearSplit">
           <div class="newYearLeft">
-            <img class="newYearImage left" src="assets/media/new-year-2026.png" alt="New year 2026">
+            <button class="newYearToggle" type="button" aria-label="画像を切り替える" aria-pressed="false">
+              <span class="newYearImageStack">
+                <img class="newYearImage main" src="assets/media/new-year-2026.png" alt="New year 2026">
+                <img class="newYearImage alt" src="assets/media/ChatGPT Image Jan 7, 2026, 01_56_50 AM.png" alt="ChatGPT Image Jan 7, 2026">
+              </span>
+            </button>
           </div>
           <div class="newYearRight">
             <div class="newYearTextGroup" aria-label="2026 謹賀新年">
-              <img class="newYearImage right" src="assets/media/new-year-2026-right.png" alt="New year 2026 right">
               <div class="newYearText">
                 <span style="--d:0s">2</span>
                 <span style="--d:.5s">0</span>
@@ -961,18 +992,29 @@
         video.currentTime = 0;
       });
       allWraps.forEach((wrap)=>{
-        wrap.classList.remove("show-white","show-image","show-text","white-out","image-shift");
-        const img = wrap.querySelector("img");
-        if(img){
-          img.style.opacity = "";
+        wrap.classList.remove("show-white","show-image","show-text","white-out","image-shift","show-alt");
+        const imgs = wrap.querySelectorAll("img");
+        imgs.forEach((img)=>{ img.style.opacity = ""; });
+        const toggle = wrap.querySelector(".newYearToggle");
+        if(toggle){
+          toggle.setAttribute("aria-pressed","false");
         }
       });
 
       const currentWraps = mediaOverlay.querySelectorAll('[data-media-page="newyear"]');
       currentWraps.forEach((wrap)=>{
         const video = wrap.querySelector("video");
-        const img = wrap.querySelector("img");
-        if(!video || !img) return;
+        const imgs = wrap.querySelectorAll("img");
+        if(!video || imgs.length === 0) return;
+        const toggle = wrap.querySelector(".newYearToggle");
+        if(toggle && !toggle.dataset.bound){
+          toggle.dataset.bound = "true";
+          toggle.addEventListener("click", (e)=>{
+            e.stopPropagation();
+            wrap.classList.toggle("show-alt");
+            toggle.setAttribute("aria-pressed", String(wrap.classList.contains("show-alt")));
+          });
+        }
 
         video.style.display = "block";
         const onEnd = ()=>{
@@ -1166,6 +1208,53 @@
       );
     }
 
+    const FIREWORK_COLORS = ["#ff6b6b", "#ffd93d", "#6bcBef", "#a0e426", "#f48bff", "#ff9f43"];
+
+    function ensureFxLayer(pageEl){
+      if(!pageEl) return null;
+      let layer = pageEl.querySelector(".fxLayer");
+      if(!layer){
+        layer = document.createElement("div");
+        layer.className = "fxLayer";
+        pageEl.appendChild(layer);
+      }
+      return layer;
+    }
+
+    function spawnFirework(pageEl, x, y){
+      const layer = ensureFxLayer(pageEl);
+      if(!layer) return;
+      const count = 18;
+      for(let i=0;i<count;i++){
+        const dot = document.createElement("span");
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 40 + Math.random() * 90;
+        const dx = Math.cos(angle) * dist;
+        const dy = Math.sin(angle) * dist;
+        dot.className = "fireworkParticle";
+        dot.style.left = `${x}px`;
+        dot.style.top = `${y}px`;
+        dot.style.setProperty("--dx", `${dx}px`);
+        dot.style.setProperty("--dy", `${dy}px`);
+        dot.style.background = FIREWORK_COLORS[i % FIREWORK_COLORS.length];
+        dot.style.animationDuration = `${700 + Math.random() * 400}ms`;
+        layer.appendChild(dot);
+        dot.addEventListener("animationend", ()=> dot.remove(), { once:true });
+      }
+    }
+
+    function canSpawnFirework(){
+      return mode === "open" && !spreadWrap.classList.contains("mediaSpread");
+    }
+
+    function spawnFireworkFromEvent(e, pageEl){
+      if(!pageEl) return;
+      const rect = pageEl.getBoundingClientRect();
+      const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width);
+      const y = Math.min(Math.max(0, e.clientY - rect.top), rect.height);
+      spawnFirework(pageEl, x, y);
+    }
+
     function syncCursorOnResize(){
       FLIP_DUR = getMsVar("--flipDur", 600);
       MID_SWAP = Math.floor(FLIP_DUR * 0.35);
@@ -1184,7 +1273,13 @@
 
     openCorner.addEventListener("click", openBook);
 
-    hotRight.addEventListener("click", ()=>{
+    cRight.addEventListener("click", (e)=>{
+      if(!canSpawnFirework()) return;
+      spawnFireworkFromEvent(e, cRight);
+    });
+
+    hotRight.addEventListener("click", (e)=>{
+      if(canSpawnFirework()) spawnFireworkFromEvent(e, cRight);
       if (mode === "frontCover") openBook();
       else next();
     });

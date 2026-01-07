@@ -1,25 +1,25 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
-This is a single-file static site. The core UI, styles, and behavior live in `index.html`. GitHub Pages deployment is configured in `.github/workflows/static.yml`. If you add assets (images, videos), keep them in a top-level folder like `assets/` and use relative paths from `index.html`.
+## プロジェクト構成 & モジュール構成
+このリポジトリは単一ページの静的サイトです。UI、スタイル、挙動はすべて `index.html` に集約されています。画像や動画は `assets/img`、`assets/media` に置き、`index.html` から相対パスで参照してください。GitHub Pages のデプロイは `.github/workflows/static.yml` に定義されています。
 
-## Build, Test, and Development Commands
-There is no build step. For a local preview, serve the repo with a simple static server:
+## ビルド・テスト・開発コマンド
+ビルド工程はありません。ローカル確認は簡易サーバーで行います。
 ```sh
 python3 -m http.server 8000
 ```
-Then open `http://localhost:8000` in a browser. You can also open `index.html` directly, but a server is closer to GitHub Pages behavior.
+`http://localhost:8000` を開いて確認します。`index.html` を直接開いても動きますが、GitHub Pages に近い挙動にするためサーバー推奨です。
 
-## Coding Style & Naming Conventions
-Keep indentation at 2 spaces, matching `index.html`. Use descriptive, lowercase CSS class names (e.g., `.bookRig`, `.spreadWrap`) and prefer CSS variables under `:root` for theme values. In JavaScript, keep constants in `SCREAMING_SNAKE_CASE` (e.g., `PAGES`, `ORDER`) and functions in `camelCase`. Content strings can be bilingual; keep line breaks intentional since they are rendered into HTML.
+## コーディングスタイル & 命名規則
+インデントは 2 スペースで揃えてください。CSS クラスは lowerCamelCase を基本にします（例: `.bookRig`, `.a4Wrap`）。テーマ値は `:root` の CSS 変数に集約します。JavaScript は `const` の定数を `UPPER_SNAKE_CASE`、関数や変数は `camelCase` を目安にしてください。テンプレート文字列内の HTML は改行や余白がレンダリングに影響するため、意図が伝わる配置にします。
 
-## Testing Guidelines
-No automated tests are configured. Validate changes manually:
-- Open the page on desktop and mobile widths (<= 760px) to verify layout and page-flip behavior.
-- Confirm external embeds (e.g., YouTube if used) load correctly.
+## テスト指針
+自動テストはありません。手動確認で品質を担保します。
+- デスクトップ/モバイル幅（目安: 760px 以下）でレイアウトとページめくり挙動を確認。
+- 動画・YouTube 埋め込み・画像の読み込みを確認。
 
-## Commit & Pull Request Guidelines
-Existing commits use short, descriptive messages, often in Japanese (e.g., `更新`). Follow that style: concise, imperative, and focused on the change. For pull requests, include a brief summary and screenshots or screen recordings for visual/UI updates. Link related issues when available.
+## コミット & プルリクエスト指針
+コミットは `update12` のような短く簡潔な形式が多いので、同様に短文でまとめます。UI 変更の PR には要約とスクリーンショット/録画を添付し、関連 Issue があればリンクします。
 
-## Deployment
-Pushes to `main` trigger GitHub Pages via `.github/workflows/static.yml`. Ensure the page renders correctly before merging.
+## デプロイ
+`main` への push が GitHub Pages をトリガーします。ファイル名の大文字小文字や相対パスの整合性を確認してから反映してください。
